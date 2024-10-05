@@ -18,7 +18,7 @@ public class RouteMap<T> where T : class, INavigable
         _routes = new ReadOnlyDictionary<string, Type>(viewModels);
     }
 
-    public Type? this[string key] => _routes.GetValueOrDefault(key);
+    public Type this[string key] => _routes.GetValueOrDefault(key);
 
     private static string GetRouteAttributeValueFromClass(Type t)
     {

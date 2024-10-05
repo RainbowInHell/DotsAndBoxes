@@ -4,7 +4,7 @@ public class DynamicDictionary
 {
     private readonly Dictionary<string, object> _parameters;
 
-    public DynamicDictionary(Dictionary<string, object>? baseParameters = null)
+    public DynamicDictionary(Dictionary<string, object> baseParameters = null)
     {
         _parameters = baseParameters ?? new Dictionary<string, object>();
     }
@@ -14,7 +14,7 @@ public class DynamicDictionary
         _parameters = baseParameters.ToDictionary(x => x.Item1, x => x.Item2);
     }
 
-    public T? GetValue<T>(string key)
+    public T GetValue<T>(string key)
     {
         if (!_parameters.TryGetValue(key, out var value))
         {

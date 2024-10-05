@@ -7,12 +7,15 @@
         xmlns:views="clr-namespace:DotsAndBoxes.Views"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type={x:Type vms:MainViewModel}}"
-        Title="{Binding CurrentViewModel.ViewModelTitle}" Height="600" Width="800" MinHeight="600" MinWidth="800">
-    <ContentControl Content="{Binding CurrentViewModel}">
-        <ContentControl.Resources>
+        ResizeMode="CanMinimize"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterScreen"
+        Title="{Binding CurrentViewModel.ViewModelTitle}">
+    <Frame Content="{Binding CurrentViewModel}">
+        <Frame.Resources>
             <DataTemplate DataType="{x:Type vms:HomeViewModel}">
                 <views:HomeView />
             </DataTemplate>
-        </ContentControl.Resources>
-    </ContentControl>
+        </Frame.Resources>
+    </Frame>
 </Window>

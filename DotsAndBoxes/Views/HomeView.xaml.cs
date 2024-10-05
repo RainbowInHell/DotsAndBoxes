@@ -2,7 +2,7 @@
 
 namespace DotsAndBoxes.Views;
 
-public partial class HomeView : UserControl
+public partial class HomeView
 {
     public HomeView()
     {

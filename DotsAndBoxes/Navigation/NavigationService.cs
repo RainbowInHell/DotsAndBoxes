@@ -1,6 +1,4 @@
-﻿using DotsAndBoxes.Navigation;
-
-namespace DotsAndBoxes.Navigation;
+﻿namespace DotsAndBoxes.Navigation;
 
 public class NavigationService<T> : INavigationService<T> where T : class, INavigable
 {
@@ -27,17 +25,17 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
         _routeMap = routeMap;
     }
 
-    public NavigationResult Navigate(string path, DynamicDictionary? parameters = null)
+    public NavigationResult Navigate(string path, DynamicDictionary parameters = null)
     {
         return NavigateInternal(path, NavigationMethod.Default, parameters);
     }
 
-    public NavigationResult PopAndNavigate(string path, DynamicDictionary? parameters = null)
+    public NavigationResult PopAndNavigate(string path, DynamicDictionary parameters = null)
     {
         return NavigateInternal(path, NavigationMethod.Pop, parameters);
     }
 
-    public NavigationResult ClearAndNavigate(string path, DynamicDictionary? parameters = null)
+    public NavigationResult ClearAndNavigate(string path, DynamicDictionary parameters = null)
     {
         return NavigateInternal(path, NavigationMethod.Clear, parameters);
     }
@@ -55,8 +53,7 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
         OnNavigated?.Invoke(result);
     }
 
-    private NavigationResult NavigateInternal(string path, NavigationMethod method = NavigationMethod.Default,
-        DynamicDictionary? parameters = null)
+    private NavigationResult NavigateInternal(string path, NavigationMethod method = NavigationMethod.Default, DynamicDictionary parameters = null)
     {
         var args = new NavigationArgs { Destination = path, Parameters = parameters ?? new DynamicDictionary() };
         if (!PathExists(path))
@@ -90,5 +87,5 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
         return result;
     }
 
-    public event Action<NavigationResult>? OnNavigated;
+    public event Action<NavigationResult> OnNavigated;
 }
