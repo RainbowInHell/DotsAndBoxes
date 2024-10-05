@@ -10,8 +10,8 @@
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignColors;component/Themes/Recommended/Accent/MaterialDesignColor.Lime.xaml" x:Name="Lime"/>
                 <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.PopupBox.xaml" x:Name="Popup"/>
 
-                <ResourceDictionary Source="pack://application:,,,/Styles/Generic.xaml"/>
-                <ResourceDictionary Source="pack://application:,,,/Styles/Converters.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/DotsAndBoxesUIComponents;component/Styles/Generic.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/DotsAndBoxesUIComponents;component/Styles/Converters.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

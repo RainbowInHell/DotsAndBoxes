@@ -11,10 +11,13 @@
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterScreen"
         Title="{Binding CurrentViewModel.ViewModelTitle}">
-    <Frame Content="{Binding CurrentViewModel}">
+    <Frame NavigationUIVisibility="Hidden" Content="{Binding CurrentViewModel}">
         <Frame.Resources>
             <DataTemplate DataType="{x:Type vms:HomeViewModel}">
                 <views:HomeView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vms:PlayersLobbyViewModel}">
+                <views:PlayersLobbyView />
             </DataTemplate>
         </Frame.Resources>
     </Frame>

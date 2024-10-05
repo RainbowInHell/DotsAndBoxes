@@ -9,15 +9,24 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MaterialDesignThemes" Version="3.1.0" />
+        <PackageReference Include="AsyncAwaitBestPractices" Version="8.0.0" />
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.8" />
         <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
         <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+        <PackageReference Include="Nito.AsyncEx" Version="5.1.2" />
+        <PackageReference Include="Refit" Version="7.2.1" />
+        <PackageReference Include="Refit.HttpClientFactory" Version="7.2.1" />
     </ItemGroup>
 
     <ItemGroup>
       <Resource Include="Images\DotsAndBoxesRules.png" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\DotsAndBoxesUIComponents\DotsAndBoxesUIComponents.csproj" />
+      <ProjectReference Include="..\DotsAndBoxesServerAPI\DotsAndBoxesServerAPI.csproj" />
+    </ItemGroup>
 </Project>

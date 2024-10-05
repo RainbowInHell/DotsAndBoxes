@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Data;
 
-namespace DotsAndBoxes.Converters;
+namespace DotsAndBoxesUIComponents;
 
 public class EnumToVisibilityConverter : IValueConverter
 {

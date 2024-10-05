@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.Runtime.CompilerServices;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using DotsAndBoxes.Attributes;
 using DotsAndBoxes.Navigation;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,17 +6,23 @@ using Microsoft.Extensions.DependencyInjection;
 namespace DotsAndBoxes.ViewModels;
 
 [ViewModelLifetime(ServiceLifetime.Transient)]
-public abstract class BaseViewModel : INotifyPropertyChanged, INavigable
+public abstract partial class BaseViewModel : ObservableObject, INavigable, IDisposable
 {
-    public abstract string ViewModelTitle { get; }
+    [ObservableProperty]
+    private string _viewModelTitle;
 
     public virtual NavigationResult OnNavigatedTo(NavigationArgs args)
     {
         return new NavigationResult { IsSuccess = true, NavigationArgs = args };
     }
-    // [NotifyPropertyChangedInvocator]
-    public virtual void OnPropertyChanged([CallerMemberName] string fieldName = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(fieldName));
-    
-    public event PropertyChangedEventHandler PropertyChanged;
+
+    public virtual Task<NavigationResult> OnNavigatedToAsync(NavigationArgs args)
+    {
+        return Task.FromResult(new NavigationResult { IsSuccess = true, NavigationArgs = args });
+    }
+
+    public virtual void Dispose()
+    {
+        // TODO release managed resources here
+    }
 }

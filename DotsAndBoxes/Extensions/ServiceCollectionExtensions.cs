@@ -14,7 +14,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<INavigationService<T>, NavigationService<T>>();
     }
 
-    public static void RegisterTransientViewModelsFromAssembly(this IServiceCollection services, Assembly assembly)
+    public static void AddViewModels(this IServiceCollection services, Assembly assembly)
     {
         var viewModels = assembly
             .GetTypes()
@@ -28,7 +28,7 @@ public static class ServiceCollectionExtensions
             services.AddTransient(viewModel);
         }
     }
-    
+
     private static ServiceLifetime GetViewModelLifetimeFromAttribute(Type t)
     {
         var attribute = Attribute.GetCustomAttribute(t, typeof(ViewModelLifetimeAttribute))!;

@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Data;
 
-namespace DotsAndBoxes.Converters;
+namespace DotsAndBoxesUIComponents;
 
 public class BoolToVisibilityConverter : IValueConverter
 {
@@ -11,6 +11,11 @@ public class BoolToVisibilityConverter : IValueConverter
         if (value is not bool state)
         {
             return Visibility.Collapsed;
+        }
+
+        if (parameter is string parameterString && parameterString.Equals("Invert", StringComparison.OrdinalIgnoreCase))
+        {
+            state = !state;
         }
 
         return state ? Visibility.Visible : Visibility.Collapsed;
