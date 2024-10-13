@@ -1,122 +1,269 @@
 ﻿using System.Windows;
-using System.Windows.Media;
 
 namespace DotsAndBoxesUIComponents;
 
-public enum MessageType
+public enum MsgBoxResult
 {
-    Info,
-    Confirmation,
-    Success,
+    None,
+    OK,
+    Yes,
+    No,
+    Cancel,
+    CustomResult1,
+    CustomResult2,
+    CustomResult3
+}
+
+public enum MsgBoxButton
+{
+    None,
+    OK,
+    OKCancel,
+    YesNo,
+    YesNoCancel
+}
+
+public enum MsgBoxImage
+{
+    None,
+    Information,
+    Question,
     Warning,
     Error
 }
 
-public enum MessageButtons
+public partial class CustomMessageBox
 {
-    OkCancel,
-    YesNo,
-    Ok
-}
+    public MsgBoxResult Result { get; private set; }
 
-public partial class CustomMessageBox : Window
-{
-    public CustomMessageBox(string message, MessageType type, MessageButtons buttons)
+    internal string Caption
+    {
+        get => captionTxtBlock.Text;
+        set => captionTxtBlock.Text = value;
+    }
+
+    internal string Message
+    {
+        get => messageTxtBlock.Text;
+        set => messageTxtBlock.Text = value;
+    }
+
+    internal string OkButtonText
+    {
+        get => okBtn.Content.ToString();
+        set => okBtn.Content = value;
+    }
+
+    internal string YesButtonText
+    {
+        get => yesBtn.Content.ToString();
+        set => yesBtn.Content = value;
+    }
+
+    internal string NoButtonText
+    {
+        get => noBtn.Content.ToString();
+        set => noBtn.Content = value;
+    }
+
+    internal string CancelButtonText
+    {
+        get => cancelBtn.Content.ToString();
+        set => cancelBtn.Content = value;
+    }
+
+    internal string CustomButton1Text
+    {
+        get => custom1Btn.Content.ToString();
+        set => custom1Btn.Content = value;
+    }
+
+    internal string CustomButton2Text
+    {
+        get => custom2Btn.Content.ToString();
+        set => custom2Btn.Content = value;
+    }
+
+    internal string CustomButton3Text
+    {
+        get => custom3Btn.Content.ToString();
+        set => custom3Btn.Content = value;
+    }
+
+    public CustomMessageBox(string message)
     {
         InitializeComponent();
-        txtMessage.Content = message;
+        Message = message;
+        messageTxtBlock.Visibility = Visibility.Visible;
+        SetUpButtons(MsgBoxButton.OK);
+    }
 
-        switch (type)
-        {
-            case MessageType.Info:
-                txtTitle.Text = "Информация";
-                break;
-            case MessageType.Confirmation:
-                txtTitle.Text = "Подтверждение";
-                break;
-            case MessageType.Success:
-            {
-                var defaultColor = "#4527a0";
-                var bkColor = (Color)ColorConverter.ConvertFromString(defaultColor);
-                ChangeBackgroundThemeColor(Colors.Green);
-                txtTitle.Text = "Успех";
-            }
-                break;
-            case MessageType.Warning:
-                txtTitle.Text = "Предупреждение";
-                break;
-            case MessageType.Error:
-            {
-                var defaultColor = "#F44336";
-                var bkColor = (Color)ColorConverter.ConvertFromString(defaultColor);
-                ChangeBackgroundThemeColor(bkColor);
-                ChangeBackgroundThemeColor(Colors.Red);
-                txtTitle.Text = "Ошибка";
-            }
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(type), type, null);
-        }
+    public CustomMessageBox(string message, MsgBoxButton buttons, MsgBoxImage image)
+    {
+        InitializeComponent();
+        Message = message;
+        captionTxtBlock.Visibility = Visibility.Visible;
+        messageTxtBlock.Visibility = Visibility.Visible;
+        SetUpButtons(buttons);
+        SetUpImage(image);
+    }
 
+    public CustomMessageBox(string message, string caption)
+    {
+        InitializeComponent();
+        Message = message;
+        Caption = caption;
+        captionTxtBlock.Visibility = Visibility.Visible;
+        messageTxtBlock.Visibility = Visibility.Visible;
+        SetUpButtons(MsgBoxButton.OK);
+    }
+
+    public CustomMessageBox(string message, string caption, MsgBoxButton buttons)
+    {
+        InitializeComponent();
+        Message = message;
+        Caption = caption;
+        captionTxtBlock.Visibility = Visibility.Visible;
+        messageTxtBlock.Visibility = Visibility.Visible;
+        SetUpButtons(buttons);
+    }
+
+    public CustomMessageBox(string message, string caption, MsgBoxButton buttons, MsgBoxImage image)
+    {
+        InitializeComponent();
+        Message = message;
+        Caption = caption;
+        captionTxtBlock.Visibility = Visibility.Visible;
+        messageTxtBlock.Visibility = Visibility.Visible;
+        SetUpButtons(buttons);
+        SetUpImage(image);
+    }
+    
+    private void SetUpButtons(MsgBoxButton buttons)
+    {
         switch (buttons)
         {
-            case MessageButtons.OkCancel:
-                btnYes.Visibility = Visibility.Collapsed;
-                btnNo.Visibility = Visibility.Collapsed;
+            case MsgBoxButton.None:
+            {
                 break;
-            case MessageButtons.YesNo:
-                btnOk.Visibility = Visibility.Collapsed;
-                btnCancel.Visibility = Visibility.Collapsed;
+            }
+            case MsgBoxButton.OKCancel:
+            {
+                okBtn.Visibility = Visibility.Visible;
+                cancelBtn.Visibility = Visibility.Visible;
+                okBtn.Focus();
                 break;
-            case MessageButtons.Ok:
-                btnOk.Visibility = Visibility.Visible;
-                btnCancel.Visibility = Visibility.Collapsed;
-                btnYes.Visibility = Visibility.Collapsed;
-                btnNo.Visibility = Visibility.Collapsed;
+            }
+            case MsgBoxButton.YesNoCancel:
+            {
+                yesBtn.Visibility = Visibility.Visible;
+                noBtn.Visibility = Visibility.Visible;
+                cancelBtn.Visibility = Visibility.Visible;
+                yesBtn.Focus();
                 break;
+            }
+            case MsgBoxButton.YesNo:
+            {
+                yesBtn.Visibility = Visibility.Visible;
+                noBtn.Visibility = Visibility.Visible;
+                yesBtn.Focus();
+                break;
+            }
+            case MsgBoxButton.OK:
             default:
-                throw new ArgumentOutOfRangeException(nameof(buttons), buttons, null);
+            {
+                okBtn.Visibility = Visibility.Visible;
+                okBtn.Focus();
+                break;
+            }
         }
     }
 
-    private void ChangeBackgroundThemeColor(Color newColor)
-    {
-        cardHeader.Background = new SolidColorBrush(newColor);
-        btnClose.Foreground = new SolidColorBrush(newColor);
-        btnYes.Background = new SolidColorBrush(newColor);
-        btnNo.Background = new SolidColorBrush(newColor);
-
-        btnOk.Background = new SolidColorBrush(newColor);
-        btnCancel.Background = new SolidColorBrush(newColor);
+    private void SetUpImage(MsgBoxImage image)
+    {            
+        switch (image)
+        {
+            case MsgBoxImage.None:
+            {
+                break;
+            }
+            case MsgBoxImage.Question:
+            {
+                questionImage.Visibility = Visibility.Visible;
+                break;
+            }
+            case MsgBoxImage.Information:
+            {
+                informationImage.Visibility = Visibility.Visible;
+                break;
+            }
+            case MsgBoxImage.Warning:
+            {
+                warningImage.Visibility = Visibility.Visible;
+                break;
+            }
+            case MsgBoxImage.Error:
+            {
+                errorImage.Visibility = Visibility.Visible;
+                break;
+            }
+            default:
+            {
+                throw new ArgumentOutOfRangeException(nameof(image), image, null);
+            }
+        }
     }
 
-    private void btnYes_Click(object sender, RoutedEventArgs e)
+    private void Window_MouseDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        DialogResult = true;
+        DragMove();
+    }
+
+    private void custom1Btn_Click(object sender, RoutedEventArgs e)
+    {
+        Result = MsgBoxResult.CustomResult1;
         Close();
     }
 
-    private void btnCancel_Click(object sender, RoutedEventArgs e)
+    private void custom2Btn_Click(object sender, RoutedEventArgs e)
     {
-        DialogResult = false;
+        Result = MsgBoxResult.CustomResult2;
         Close();
     }
 
-    private void btnOk_Click(object sender, RoutedEventArgs e)
+    private void custom3Btn_Click(object sender, RoutedEventArgs e)
     {
-        DialogResult = true;
+        Result = MsgBoxResult.CustomResult3;
         Close();
     }
 
-    private void btnNo_Click(object sender, RoutedEventArgs e)
+    private void okBtn_Click(object sender, RoutedEventArgs e)
     {
-        DialogResult = false;
+        Result = MsgBoxResult.OK;
         Close();
     }
 
-    private void btnClose_Click(object sender, RoutedEventArgs e)
+    private void yesBtn_Click(object sender, RoutedEventArgs e)
     {
-        DialogResult = false;
+        Result = MsgBoxResult.Yes;
+        Close();
+    }
+
+    private void noBtn_Click(object sender, RoutedEventArgs e)
+    {
+        Result = MsgBoxResult.No;
+        Close();
+    }
+
+    private void cancelBtn_Click(object sender, RoutedEventArgs e)
+    {
+        Result = MsgBoxResult.Cancel;
+        Close();
+    }
+
+    private void closeBtn_Click(object sender, RoutedEventArgs e)
+    {
+        Result = MsgBoxResult.None;
         Close();
     }
 }

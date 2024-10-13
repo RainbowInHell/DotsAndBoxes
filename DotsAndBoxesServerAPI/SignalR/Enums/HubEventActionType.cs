@@ -2,8 +2,20 @@
 {
     public enum HubEventActionType
     {
-        OnNewPlayerConnected,
+        OnNewPlayerConnect,
 
-        OnConnectedPlayersActualization
+        OnPlayerUpdateSettings,
+
+        OnPlayerSendChallenge,
+
+        OnPlayerReceiveChallenge,
+
+        OnPlayerCancelChallenge,
+
+        OnPlayerRejectChallenge,
+
+        OnPlayerAcceptChallenge,
+
+        OnPlayerDisconnect
     }
 }

@@ -4,12 +4,12 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
 {
     private readonly Stack<KeyValuePair<string, T>> _routeHistory;
 
-    private readonly Dictionary<NavigationMethod, Action<Stack<KeyValuePair<string, T>>>>
-        _navigationMethodCallbacks = new()
-        {
-            { NavigationMethod.Pop, x => x.Pop() },
-            { NavigationMethod.Clear, x => x.Clear() },
-        };
+    // private readonly Dictionary<NavigationMethod, Action<Stack<KeyValuePair<string, T>>>>
+    //     _navigationMethodCallbacks = new()
+    //     {
+    //         { NavigationMethod.Pop, x => x.Pop() },
+    //         { NavigationMethod.Clear, x => x.Clear() },
+    //     };
 
     public T CurrentNavigatedItem { get; private set; } = null!;
 
@@ -47,7 +47,11 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
 
     public void GoBack()
     {
-        if (!CanGoBack) return;
+        if (!CanGoBack)
+        {
+            return;
+        }
+
         _routeHistory.Pop();
         var viewModel = _routeHistory.Peek();
         var args = new NavigationArgs { Destination = viewModel.Key, NavigationMode = NavigationMode.Back };
@@ -62,19 +66,21 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
     private NavigationResult NavigateInternal(string path, NavigationMethod method = NavigationMethod.Default, DynamicDictionary parameters = null)
     {
         var args = new NavigationArgs { Destination = path, Parameters = parameters ?? new DynamicDictionary() };
-        if (!PathExists(path))
+        if (!TryGetViewModelTypeByPath(path, out var viewModelType))
+        {
             return BuildUnsuccessfulResult(args);
+        }
 
-        var viewModelType = _routeMap[path]!;
         if (_serviceProvider.GetService(viewModelType) is not T viewModel)
+        {
             return BuildUnsuccessfulResult(args);
+        }
 
         var result = viewModel.OnNavigatedTo(args);
-
         if (result.IsSuccess)
         {
-            _navigationMethodCallbacks.TryGetValue(method, out var value);
-            value?.Invoke(_routeHistory);
+            // _navigationMethodCallbacks.TryGetValue(method, out var value);
+            // value?.Invoke(_routeHistory);
             _routeHistory.Push(new KeyValuePair<string, T>(path, viewModel));
             CurrentNavigatedItem = viewModel;
         }
@@ -87,19 +93,21 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
     private async Task<NavigationResult> NavigateInternalAsync(string path, NavigationMethod method = NavigationMethod.Default, DynamicDictionary parameters = null)
     {
         var args = new NavigationArgs { Destination = path, Parameters = parameters ?? new DynamicDictionary() };
-        if (!PathExists(path))
+        if (!TryGetViewModelTypeByPath(path, out var viewModelType))
+        {
             return BuildUnsuccessfulResult(args);
+        }
 
-        var viewModelType = _routeMap[path]!;
         if (_serviceProvider.GetService(viewModelType) is not T viewModel)
+        {
             return BuildUnsuccessfulResult(args);
+        }
 
         var result = await viewModel.OnNavigatedToAsync(args).ConfigureAwait(false);
-
         if (result.IsSuccess)
         {
-            _navigationMethodCallbacks.TryGetValue(method, out var value);
-            value?.Invoke(_routeHistory);
+            // _navigationMethodCallbacks.TryGetValue(method, out var value);
+            // value?.Invoke(_routeHistory);
             _routeHistory.Push(new KeyValuePair<string, T>(path, viewModel));
             CurrentNavigatedItem = viewModel;
         }
@@ -109,7 +117,17 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
         return result;
     }
 
-    private bool PathExists(string path) => _routeMap[path] is not null;
+    private bool TryGetViewModelTypeByPath(string path, out Type viewModelType)
+    {
+        viewModelType = default;
+        if (_routeMap[path] is null)
+        {
+            return false;
+        }
+
+        viewModelType = _routeMap[path];
+        return true;
+    }
 
     private NavigationResult BuildUnsuccessfulResult(NavigationArgs args, string message = "Такого пути не существует")
     {

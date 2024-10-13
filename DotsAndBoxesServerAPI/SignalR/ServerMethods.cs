@@ -2,14 +2,18 @@
 
 public static class ServerMethods
 {
-    private static readonly IReadOnlyDictionary<ServerMethodType, string> ServerMethodNames;
+    private static readonly Dictionary<ServerMethodType, string> ServerMethodNames;
 
     static ServerMethods()
     {
         ServerMethodNames = new Dictionary<ServerMethodType, string>
         {
-            { ServerMethodType.NewPlayerConnected, ServerMethodType.NewPlayerConnected.ToString() },
-            { ServerMethodType.ConnectedPlayersActualization, ServerMethodType.ConnectedPlayersActualization.ToString() },
+            { ServerMethodType.NewPlayerConnect, ServerMethodType.NewPlayerConnect.ToString() },
+            { ServerMethodType.PlayerUpdateSettings, ServerMethodType.PlayerUpdateSettings.ToString() },
+            { ServerMethodType.PlayerDisconnect, ServerMethodType.PlayerDisconnect.ToString() },
+            { ServerMethodType.PlayerSendChallenge, ServerMethodType.PlayerSendChallenge.ToString() },
+            { ServerMethodType.PlayerCancelChallenge, ServerMethodType.PlayerCancelChallenge.ToString() },
+            { ServerMethodType.PlayerSendChallengeAnswer, ServerMethodType.PlayerSendChallengeAnswer.ToString() }
         };
     }
 

@@ -3,4 +3,7 @@
                     xmlns:DotsAndBoxesUIComponents="clr-namespace:DotsAndBoxesUIComponents">
     <DotsAndBoxesUIComponents:BoolToVisibilityConverter x:Key="boolToVisibilityConverter" />
     <DotsAndBoxesUIComponents:EnumToVisibilityConverter x:Key="enumToVisibilityConverter" />
+    <DotsAndBoxesUIComponents:EnumToDisplayNameConverter x:Key="enumToDisplayNameConverter" />
+    <DotsAndBoxesUIComponents:EnumToBoolConverter x:Key="enumToBoolConverter" />
+    <DotsAndBoxesUIComponents:MultiBoolToBoolConverter x:Key="multiBoolToBoolConverter" />
 </ResourceDictionary>

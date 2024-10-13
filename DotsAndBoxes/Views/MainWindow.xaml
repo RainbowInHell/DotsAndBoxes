@@ -9,7 +9,7 @@
         d:DataContext="{d:DesignInstance Type={x:Type vms:MainViewModel}}"
         ResizeMode="CanMinimize"
         SizeToContent="WidthAndHeight"
-        WindowStartupLocation="CenterScreen"
+        WindowStartupLocation="CenterOwner"
         Title="{Binding CurrentViewModel.ViewModelTitle}">
     <Frame NavigationUIVisibility="Hidden" Content="{Binding CurrentViewModel}">
         <Frame.Resources>

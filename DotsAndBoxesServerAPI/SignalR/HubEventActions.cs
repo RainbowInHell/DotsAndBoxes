@@ -8,8 +8,14 @@ public static class HubEventActions
     {
         HubEventActionNames = new Dictionary<HubEventActionType, string>
         {
-            { HubEventActionType.OnNewPlayerConnected, HubEventActionType.OnNewPlayerConnected.ToString() },
-            { HubEventActionType.OnConnectedPlayersActualization, HubEventActionType.OnConnectedPlayersActualization.ToString() }
+            { HubEventActionType.OnNewPlayerConnect, HubEventActionType.OnNewPlayerConnect.ToString() },
+            { HubEventActionType.OnPlayerUpdateSettings, HubEventActionType.OnPlayerUpdateSettings.ToString() },
+            { HubEventActionType.OnPlayerDisconnect, HubEventActionType.OnPlayerDisconnect.ToString() },
+            { HubEventActionType.OnPlayerSendChallenge, HubEventActionType.OnPlayerSendChallenge.ToString() },
+            { HubEventActionType.OnPlayerReceiveChallenge, HubEventActionType.OnPlayerReceiveChallenge.ToString() },
+            { HubEventActionType.OnPlayerCancelChallenge, HubEventActionType.OnPlayerCancelChallenge.ToString() },
+            { HubEventActionType.OnPlayerRejectChallenge, HubEventActionType.OnPlayerRejectChallenge.ToString() },
+            { HubEventActionType.OnPlayerAcceptChallenge, HubEventActionType.OnPlayerAcceptChallenge.ToString() }
         };
     }
 

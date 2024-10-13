@@ -3,7 +3,7 @@ using DotsAndBoxes.Navigation;
 
 namespace DotsAndBoxes.ViewModels;
 
-public class MainViewModel : ObservableObject
+public class MainViewModel : ObservableObject, IDisposable
 {
     private readonly INavigationService<BaseViewModel> _navigationService;
 
@@ -27,5 +27,10 @@ public class MainViewModel : ObservableObject
 
         OnPropertyChanged(nameof(CurrentViewModel));
         // GoBackCommand.NotifyCanExecuteChanged();
+    }
+
+    public void Dispose()
+    {
+        _navigationService.OnNavigated -= OnNavigated;
     }
 }

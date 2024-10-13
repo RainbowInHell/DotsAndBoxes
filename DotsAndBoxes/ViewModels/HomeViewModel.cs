@@ -5,11 +5,14 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DotsAndBoxes.Attributes;
 using DotsAndBoxes.Navigation;
+using DotsAndBoxes.SelectableItems;
 using DotsAndBoxes.SignalR;
 using DotsAndBoxesServerAPI.Models;
 using DotsAndBoxesUIComponents;
 using DotsAndBoxesServerAPI.Refit;
 using MaterialDesignThemes.Wpf;
+using Microsoft.Extensions.Logging;
+using MessageBox = DotsAndBoxesUIComponents.MessageBox;
 
 namespace DotsAndBoxes.ViewModels;
 
@@ -18,16 +21,9 @@ public partial class HomeViewModel : BaseViewModel
 {
     #region Fields
 
-    private readonly INavigationService<BaseViewModel> _navigationService;
-
-    private readonly IGameAPI _gameAPI;
-
-    private readonly SignalRServer _signalRServer;
-
-    [ObservableProperty]
-    private ObservableCollection<GameTypeSelectableItem> _gameTypes;
-
     private GameTypeSelectableItem _selectedGameTypeItem;
+
+    #region FieldsWithObservableProperties
 
     [ObservableProperty]
     private string _firstPlayerName;
@@ -36,27 +32,60 @@ public partial class HomeViewModel : BaseViewModel
     private string _secondPlayerName;
 
     [ObservableProperty]
-    private bool _canBeChallenged;
+    private bool _doNotDisturb;
 
     [ObservableProperty]
     private bool _isLoading;
 
     #endregion
 
-    public HomeViewModel(INavigationService<BaseViewModel> navigationService, IGameAPI gameAPI, SignalRServer signalRServer)
-    {
-        _navigationService = navigationService;
-        _gameAPI = gameAPI;
-        _signalRServer = signalRServer;
+    private readonly INavigationService<BaseViewModel> _navigationService;
 
+    private readonly IGameAPI _gameAPI;
+
+    private readonly SignalRServer _signalRServer;
+
+    private readonly ILogger<HomeViewModel> _logger;
+
+    #endregion
+
+    public HomeViewModel(ILogger<HomeViewModel> logger,
+                         INavigationService<BaseViewModel> navigationService,
+                         IGameAPI gameAPI,
+                         SignalRServer signalRServer)
+    {
         ViewModelTitle = "Домашняя";
+        SelectedGameTypeItem = GameTypes[0];
 
         GoToPlayersLobbyCommand = new AsyncRelayCommand(GoToPlayersLobbyExecuteAsync);
 
-        InitializeSelectableGameTypes();
+        _logger = logger;
+        _navigationService = navigationService;
+        _gameAPI = gameAPI;
+        _signalRServer = signalRServer;
     }
 
     #region Properties
+
+    public ObservableCollection<GameTypeSelectableItem> GameTypes { get; } =
+    [
+        // new GameTypeSelectableItem
+        // {
+        //     Icon = PackIconKind.Account,
+        //     Name = "Одиночный"
+        // },
+        //
+        // new GameTypeSelectableItem
+        // {
+        //     Icon = PackIconKind.PersonMultiple,
+        //     Name = "Вдвоем"
+        // },
+        new()
+        {
+            Icon = PackIconKind.LanConnect,
+            Name = "По сети"
+        }
+    ];
 
     public PackIconKind SelectedGameType => SelectedGameTypeItem.Icon;
 
@@ -80,7 +109,6 @@ public partial class HomeViewModel : BaseViewModel
 
     #region Commands
 
-    // TODO: Навигация не только в лобби.
     public ICommand GoToPlayersLobbyCommand { get; }
 
     #endregion
@@ -91,27 +119,28 @@ public partial class HomeViewModel : BaseViewModel
     {
         if (string.IsNullOrEmpty(FirstPlayerName))
         {
-            _ = new CustomMessageBox("Имя игрока должно быть заполнено.", MessageType.Error, MessageButtons.Ok).ShowDialog();
-            return;
+           _ = MessageBox.Show("Имя игрока должно быть заполнено.", MsgBoxButton.OK, MsgBoxImage.Error);
+           return;
         }
 
         try
         {
             IsLoading = true;
 
-            // var existedConnectedPlayer = await _gameAPI.GetConnectedPlayerByNameAsync(FirstPlayerName).ConfigureAwait(false);
-            // if (existedConnectedPlayer is not null)
-            // {
-            //     IsLoading = false;
-            //     
-            //     await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
-            //                                                                 {
-            //                                                                     _ = new CustomMessageBox("Игрок с таким именем уже есть на сервере.", MessageType.Error, MessageButtons.Ok).ShowDialog();
-            //                                                                 });
-            //     return;
-            // }
-
             await Task.Delay(1500).ConfigureAwait(false);
+
+            var connectedPlayers = await _gameAPI.GetConnectedPlayers().ConfigureAwait(false);
+            if (connectedPlayers.Any(x => x.Name.Equals(FirstPlayerName, StringComparison.OrdinalIgnoreCase)))
+            {
+                IsLoading = false;
+                
+                await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
+                                                                            {
+                                                                                _ = MessageBox.Show("Игрок с таким именем уже есть на сервере.", MsgBoxButton.OK, MsgBoxImage.Error);
+                                                                            });
+                return;
+            }
+
             await _signalRServer.StartConnectionAsync().ConfigureAwait(false);
 
             IsLoading = false;
@@ -119,55 +148,24 @@ public partial class HomeViewModel : BaseViewModel
             var newConnectedPlayer = new Player
             {
                 Name = FirstPlayerName,
-                CanBeChallenged = CanBeChallenged,
-                ConnectionId = _signalRServer.ConnectionId
+                Status = DoNotDisturb ? PlayerStatus.DoNotDisturb : PlayerStatus.FreeToPlay
             };
 
-            await _signalRServer.SendNewPlayerConnectedAsync(newConnectedPlayer).ConfigureAwait(false);
-            await _navigationService.NavigateAsync(Routes.PlayersLobby).ConfigureAwait(false);
+            await _signalRServer.SendNewPlayerConnectAsync(newConnectedPlayer).ConfigureAwait(false);
+            await _navigationService.NavigateAsync(Routes.PlayersLobby,
+                                                   new DynamicDictionary((nameof(FirstPlayerName), FirstPlayerName))).ConfigureAwait(false);
         }
         catch (HttpRequestException ex)
         {
+            _logger.LogError("Can't go to players lobby due to an error: {ex}", ex);
+
             IsLoading = false;
             await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
                                                                         {
-                                                                            _ = new CustomMessageBox($"Сервер недоступен, попробуйте позже.\n{ex}", MessageType.Error, MessageButtons.Ok).ShowDialog();
+                                                                            _ = MessageBox.Show("Сервер недоступен, попробуйте позже.", MsgBoxButton.OK, MsgBoxImage.Error);
                                                                         });
         }
     }
 
-    private void InitializeSelectableGameTypes()
-    {
-        GameTypes =
-        [
-            new GameTypeSelectableItem
-            {
-                Icon = PackIconKind.Account,
-                Name = "Одиночный"
-            },
-
-            new GameTypeSelectableItem
-            {
-                Icon = PackIconKind.PersonMultiple,
-                Name = "Вдвоем"
-            },
-
-            new GameTypeSelectableItem
-            {
-                Icon = PackIconKind.LanConnect,
-                Name = "По сети"
-            }
-        ];
-
-        SelectedGameTypeItem = GameTypes[0];
-    }
-
     #endregion
-}
-
-public class GameTypeSelectableItem
-{
-    public PackIconKind Icon { get; init; }
-
-    public required string Name { get; init; }
 }

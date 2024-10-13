@@ -5,18 +5,25 @@ namespace DotsAndBoxesServer.HubFilters;
 
 public class HubFilter : IHubFilter
 {
-    public async ValueTask<object?> InvokeMethodAsync(HubInvocationContext invocationContext, Func<HubInvocationContext, ValueTask<object?>> next)
+    private readonly ILogger<HubFilter> _logger;
+
+    public HubFilter(ILogger<HubFilter> logger)
+    {
+        _logger = logger;
+    }
+
+    public async ValueTask<object> InvokeMethodAsync(HubInvocationContext invocationContext, Func<HubInvocationContext, ValueTask<object>> next)
     {
         var methodCallString = GetMethodCallDisplayString(invocationContext);
 
         try
         {
-            Console.WriteLine($"Invoking hub method: {methodCallString}");
+            _logger.LogInformation("Calling hub method '{method}'", methodCallString);
             return await next(invocationContext);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Console.WriteLine($"Failed to invoke hub method: {methodCallString}\nException: {e}");
+            _logger.LogError("Exception calling '{method}': {ex}", methodCallString, ex);
             throw;
         }
     }
@@ -34,7 +41,7 @@ public class HubFilter : IHubFilter
         }
     }
 
-    public async Task OnDisconnectedAsync(HubLifetimeContext context, Exception? exception, Func<HubLifetimeContext, Exception?, Task> next)
+    public async Task OnDisconnectedAsync(HubLifetimeContext context, Exception exception, Func<HubLifetimeContext, Exception, Task> next)
     {
         try
         {
@@ -49,17 +56,16 @@ public class HubFilter : IHubFilter
 
     private static string GetMethodCallDisplayString(HubInvocationContext invocationContext)
     {
-        var methodCall = $"{invocationContext.HubMethodName}({string.Join(", ", invocationContext.HubMethodArguments.Select(GetReadableString))})";
-        return methodCall;
+        return $"{invocationContext.HubMethodName}({string.Join(", ", invocationContext.HubMethodArguments.Select(GetReadableString))})";
     }
 
-    private static string? GetReadableString(object? value)
+    private static string GetReadableString(object value)
     {
         return value switch
         {
             null => "null",
             string str => $"\"{str}\"",
-            IEnumerable enumerable => $"{{ {string.Join(", ", enumerable.Cast<object?>().Select(GetReadableString))} }}",
+            IEnumerable enumerable => $"{{ {string.Join(", ", enumerable.Cast<object>().Select(GetReadableString))} }}",
             _ => value.ToString()
         };
     }

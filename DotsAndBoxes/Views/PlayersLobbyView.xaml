@@ -3,22 +3,230 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-      xmlns:local="clr-namespace:DotsAndBoxes"
       xmlns:vms="clr-namespace:DotsAndBoxes.ViewModels"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      xmlns:Models="clr-namespace:DotsAndBoxesServerAPI.Models;assembly=DotsAndBoxesServerAPI"
+      xmlns:SelectableItems="clr-namespace:DotsAndBoxes.SelectableItems"
       mc:Ignorable="d"
       d:DataContext="{d:DesignInstance Type={x:Type vms:PlayersLobbyViewModel}}"
-      Title="PlayersLobbyView" Height="450" Width="800">
+      Height="450" Width="800">
     <Grid>
-        <DataGrid AutoGenerateColumns="False"
-                  ItemsSource="{Binding Players}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Column="0"
+                   Margin="30,5,0,0"
+                   Text="{Binding CurrentPlayerName, UpdateSourceTrigger=PropertyChanged, Mode=OneTime}" />
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Expander Grid.Column="0"
+                      Background="White"
+                      HorizontalAlignment="Stretch"
+                      materialDesign:ExpanderAssist.ExpanderButtonPosition="Start"
+                      Header="Настройки">
+            <StackPanel Orientation="Horizontal" Margin="5,5,5,5" HorizontalAlignment="Left">
+                <!-- Grid type -->
+                <ComboBox Margin="25,5,5,5"
+                          ItemsSource="{Binding GridTypes}"
+                          SelectedItem="{Binding SelectedGridType}"
+                          materialDesign:HintAssist.Hint="Тип сетки"
+                          materialDesign:HintAssist.IsFloating="True">
+                    <ComboBox.ItemTemplate >
+                        <DataTemplate DataType="{x:Type Models:GridToPlayType}">
+                            <TextBlock Text="{Binding ., Converter={StaticResource enumToDisplayNameConverter}}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <!-- Grid size -->
+                <ComboBox Margin="5,5,5,5"
+                          ItemsSource="{Binding GridSizes}"
+                          SelectedItem="{Binding SelectedGridSize}"
+                          materialDesign:HintAssist.Hint="Размер сетки"
+                          materialDesign:HintAssist.IsFloating="True">
+                    <ComboBox.ItemTemplate >
+                        <DataTemplate DataType="{x:Type Models:GridToPlaySize}">
+                            <TextBlock Text="{Binding ., Converter={StaticResource enumToDisplayNameConverter}}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <!-- Do not disturb -->
+                <ToggleButton HorizontalAlignment="Left"
+                              ToolTip="Другие игроки не смогут отправлять вам запрос на совместную игру"
+                              Margin="5,0,0,0"
+                              Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                              IsChecked="{Binding DoNotDisturb, UpdateSourceTrigger=PropertyChanged ,Mode=OneWayToSource}"/>
+
+                <!-- Update settings button -->
+                <Button Visibility="{Binding SettingsUpdateStarted, UpdateSourceTrigger=PropertyChanged ,Mode=OneWay,
+                                             Converter={StaticResource boolToVisibilityConverter}, ConverterParameter=Invert}"
+                        Content="{materialDesign:PackIcon Autorenew}"
+                        ToolTip="Обновить настройки"
+                        Margin="5,0,0,0"
+                        Width="24"
+                        Height="24"
+                        Style="{StaticResource MaterialDesignIconButton}"
+                        Command="{Binding UpdateSettingsCommand}">
+                </Button>
+
+                <ProgressBar Visibility="{Binding SettingsUpdateStarted, UpdateSourceTrigger=PropertyChanged ,Mode=OneWay,
+                                                  Converter={StaticResource boolToVisibilityConverter}}"
+                             IsIndeterminate="True"
+                             Margin="5,0,0,0"
+                             Width="24"
+                             Height="24"
+                             Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             Value="35" />
+            </StackPanel>
+        </Expander>
+
+            <StackPanel Grid.Column="1"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Top"
+                        Margin="0,10,0,0"
+                        Visibility="{Binding ReceiveChallenge, UpdateSourceTrigger=PropertyChanged, Mode=OneWay,
+                                             Converter={StaticResource boolToVisibilityConverter}}">
+                <TextBlock Text="{Binding ChallengeMessage, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                           VerticalAlignment="Center"
+                           Margin="0,0,5,0"/>
+                <Button Width="24"
+                        Height="24"
+                        Margin="0,0,5,0"
+                        Style="{StaticResource MaterialDesignFloatingActionDarkButton}"
+                        Content="{materialDesign:PackIcon Close}"
+                        Command="{Binding RejectChallengeCommand}"/>
+                <Button Width="24"
+                        Height="24"
+                        Margin="0,0,5,0"
+                        Style="{StaticResource MaterialDesignFloatingActionDarkButton}"
+                        Content="{materialDesign:PackIcon Check}"
+                        Command="{Binding AcceptChallengeCommand}"/>
+            </StackPanel>
+        </Grid>
+
+        <DataGrid Grid.Row="2"
+                  Background="White"
+                  AutoGenerateColumns="False"
+                  ItemsSource="{Binding Players, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                  CanUserAddRows="False"
+                  ColumnHeaderStyle="{StaticResource baseDataGridColumnHeaderStyle}"
+                  RowStyle="{StaticResource fullCleanedDataGridRowStyle}"
+                  CellStyle="{StaticResource fullCleanedDataGridCellStyle}">
             <DataGrid.Columns>
-                <materialDesign:DataGridTextColumn
-                    Header="Имя">
-                    <materialDesign:DataGridTextColumn.Binding>
-                        <Binding Path="Name"/>
-                    </materialDesign:DataGridTextColumn.Binding>
-                </materialDesign:DataGridTextColumn>
+                <!-- Player name -->
+                <DataGridTextColumn IsReadOnly="True"
+                                    Header="Имя"
+                                    Binding="{Binding Name}"
+                                    Width="255">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}"
+                               BasedOn="{StaticResource MaterialDesignDataGridTextColumnStyle}">
+                            <Setter Property="Margin" Value="0,5,0,5" />
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <!-- Status -->
+                <DataGridTemplateColumn IsReadOnly="True"
+                                        Header="Статус"
+                                        Width="*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="{x:Type SelectableItems:PlayerSelectableItem}">
+                            <Ellipse Width="15" Height="15" Margin="0,5,0,5">
+                                <Ellipse.Style>
+                                    <Style TargetType="{x:Type Ellipse}">
+                                        <Setter Property="Fill" Value="Gray" />
+                                        <Setter Property="ToolTip"
+                                                Value="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay,
+                                                                Converter={StaticResource enumToDisplayNameConverter}}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                         Value="{x:Static Models:PlayerStatus.FreeToPlay}">
+                                                <Setter Property="Fill" Value="Green" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                         Value="{x:Static Models:PlayerStatus.Challenged}">
+                                                <Setter Property="Fill" Value="Orange" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                         Value="{x:Static Models:PlayerStatus.Playing}">
+                                                <Setter Property="Fill" Value="Red" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Ellipse.Style>
+                            </Ellipse>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Grid type -->
+                <DataGridTextColumn IsReadOnly="True"
+                                    Header="Тип сетки"
+                                    Binding="{Binding PreferredGridType, Converter={StaticResource enumToDisplayNameConverter}}"
+                                    Width="*">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}"
+                               BasedOn="{StaticResource MaterialDesignDataGridTextColumnStyle}">
+                            <Setter Property="Margin" Value="0,5,0,5" />
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <!-- Grid size -->
+                <DataGridTextColumn IsReadOnly="True"
+                                    Header="Размер сетки"
+                                    Binding="{Binding PreferredGridSize, Converter={StaticResource enumToDisplayNameConverter}}"
+                                    Width="*">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="{x:Type TextBlock}"
+                               BasedOn="{StaticResource MaterialDesignDataGridTextColumnStyle}">
+                            <Setter Property="Margin" Value="0,5,0,5" />
+                            <Setter Property="HorizontalAlignment" Value="Center" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <!-- Challenge button -->
+                <DataGridTemplateColumn Width="*"
+                                        IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate DataType="{x:Type SelectableItems:PlayerSelectableItem}">
+                            <Button Width="24"
+                                    Height="24"
+                                    Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Page}},
+                                                      Path=DataContext.ChallengePlayerCommand}"
+                                    CommandParameter="{Binding}"
+                                    materialDesign:ButtonProgressAssist.IsIndeterminate="True"
+                                    materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding WasChallenged, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                    materialDesign:ButtonProgressAssist.Value="-1"
+                                    Margin="0,5,0,5"
+                                IsEnabled="{Binding CanBeChallenged, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}">
+                                <Button.Style>
+                                    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource MaterialDesignFloatingActionDarkButton}">
+                                        <Setter Property="Content" Value="{materialDesign:PackIcon Fencing}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding WasChallenged}" Value="True">
+                                                <Setter Property="Content" Value="{materialDesign:PackIcon Close}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

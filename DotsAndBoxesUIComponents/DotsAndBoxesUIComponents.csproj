@@ -9,6 +9,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="MaterialDesignThemes" Version="3.1.0" />
+<!--        <PackageReference Include="MaterialDesignThemes" Version="5.1.0" />-->
+        <PackageReference Include="MaterialDesignThemes" Version="5.1.1-ci776" />
+
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DotsAndBoxesCommon\DotsAndBoxesCommon.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Controls\Icons\Error.png" />
+      <Resource Include="Controls\Icons\Error.png" />
+      <None Remove="Controls\Icons\Information.png" />
+      <Resource Include="Controls\Icons\Information.png" />
+      <None Remove="Controls\Icons\Question.png" />
+      <Resource Include="Controls\Icons\Question.png" />
+      <None Remove="Controls\Icons\Warning.png" />
+      <Resource Include="Controls\Icons\Warning.png" />
     </ItemGroup>
 </Project>

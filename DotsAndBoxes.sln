@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotsAndBoxesServerAPI", "Do
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotsAndBoxesUIComponents", "DotsAndBoxesUIComponents\DotsAndBoxesUIComponents.csproj", "{F3EC70E6-50E8-4231-86B5-B86C9CBB1CAE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotsAndBoxesCommon", "DotsAndBoxesCommon\DotsAndBoxesCommon.csproj", "{A52FBD3D-9522-4856-A9A2-09242DAA2BD2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{F3EC70E6-50E8-4231-86B5-B86C9CBB1CAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F3EC70E6-50E8-4231-86B5-B86C9CBB1CAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3EC70E6-50E8-4231-86B5-B86C9CBB1CAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A52FBD3D-9522-4856-A9A2-09242DAA2BD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A52FBD3D-9522-4856-A9A2-09242DAA2BD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A52FBD3D-9522-4856-A9A2-09242DAA2BD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A52FBD3D-9522-4856-A9A2-09242DAA2BD2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -7,6 +7,7 @@ using DotsAndBoxes.ViewModels;
 using DotsAndBoxes.Views;
 using DotsAndBoxesServerAPI.Refit;
 using Microsoft.Extensions.DependencyInjection;
+using NReco.Logging.File;
 using Refit;
 
 namespace DotsAndBoxes;
@@ -20,6 +21,13 @@ public partial class App
 
     protected override void OnStartup(StartupEventArgs args)
     {
+        // AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) =>
+                                                          // {
+                                                              // _ = new CustomMessageBox("Необработанное исключение.", MessageType.Error, MessageButtons.Ok).ShowDialog();
+                                                              // Application.OnThreadException(exception);
+                                                              // TODO: Logging
+                                                          // };
+
         var serviceCollection = new ServiceCollection();
         ConfigureServices(serviceCollection);
 
@@ -40,8 +48,16 @@ public partial class App
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        var serverAddress = ConfigurationManager.AppSettings["ServerAddress"];
+        // services.AddLogging(loggingBuilder =>
+        //                         {
+        //                             loggingBuilder.AddFile("Logs/DotsAndBoxesUI_{0:yyyy}-{0:MM}-{0:dd}.log",
+        //                                                    fileLoggerOpts =>
+        //                                                        {
+        //                                                            fileLoggerOpts.FormatLogFileName = fName => string.Format(fName, DateTime.UtcNow);
+        //                                                        });
+        //                         });
 
+        var serverAddress = ConfigurationManager.AppSettings["ServerAddress"];
         services.AddRefitClient<IGameAPI>().ConfigureHttpClient(c =>
                                                                     {
                                                                         c.BaseAddress = new Uri(serverAddress!);

@@ -5,17 +5,23 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:vms="clr-namespace:DotsAndBoxes.ViewModels"
+      xmlns:SelectableItems="clr-namespace:DotsAndBoxes.SelectableItems"
       d:DataContext="{d:DesignInstance Type={x:Type vms:HomeViewModel}}"
       mc:Ignorable="d" Height="400">
     <Grid>
-        <Grid IsEnabled="{Binding IsLoading, Converter={StaticResource boolToVisibilityConverter}, ConverterParameter=Invert}">
+        <Grid IsEnabled="{Binding IsLoading,
+                                  Converter={StaticResource boolToVisibilityConverter},
+                                  ConverterParameter=Invert}">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="500"/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="500" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Border Grid.Column="0" BorderBrush="Transparent" BorderThickness="5" CornerRadius="4">
+            <Border Grid.Column="0"
+                    BorderBrush="Transparent"
+                    BorderThickness="5"
+                    CornerRadius="4">
                 <Border.Background>
-                    <ImageBrush ImageSource="../Images/DotsAndBoxesRules.png" Stretch="UniformToFill"/>
+                    <ImageBrush ImageSource="../Images/DotsAndBoxesRules.png" Stretch="UniformToFill" />
                 </Border.Background>
             </Border>
 
@@ -26,22 +32,19 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Игровой режим"/>
+                        <TextBlock Grid.Column="0" Text="Игровой режим" />
                         <Border Grid.Column="1"
                                 Style="{StaticResource horizontalSeparatorBorderStyle}" />
                     </Grid>
 
                     <ComboBox Margin="0,0,5,0"
-                              ItemsSource="{Binding GameTypes}"
-                              SelectedItem="{Binding SelectedGameTypeItem,
-                                                 UpdateSourceTrigger=PropertyChanged,
-                                                 Mode=TwoWay}">
+                              ItemsSource="{Binding GameTypes, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                              SelectedItem="{Binding SelectedGameTypeItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vms:GameTypeSelectableItem}">
+                            <DataTemplate DataType="{x:Type SelectableItems:GameTypeSelectableItem}">
                                 <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="{Binding Icon}"
-                                                             Margin="0,0,5,0"/>
-                                    <TextBlock Text="{Binding Name}"/>
+                                    <materialDesign:PackIcon Kind="{Binding Icon}" Margin="0,0,5,0" />
+                                    <TextBlock Text="{Binding Name}" />
                                 </StackPanel>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
@@ -54,51 +57,40 @@
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="Персональная информация"/>
+                        <TextBlock Grid.Column="0" Text="Персональная информация" />
                         <Border Grid.Column="1"
                                 Style="{StaticResource horizontalSeparatorBorderStyle}" />
-                    </Grid>               
+                    </Grid>
                     <TextBox Margin="0,0,5,0"
+                             MaxLength="25"
                              Text="{Binding FirstPlayerName,
                                             UpdateSourceTrigger=PropertyChanged,
                                             Mode=TwoWay}">
-                    <TextBox.Style>
-                        <Style BasedOn="{StaticResource MaterialDesignTextBox}" TargetType="{x:Type TextBox}">
-                            <Setter Property="materialDesign:HintAssist.Hint" Value="Имя игрока"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedGameType,
-                                                               UpdateSourceTrigger=PropertyChanged}"
-                                             Value="{x:Static materialDesign:PackIconKind.PersonMultiple}">
-                                    <Setter Property="materialDesign:HintAssist.Hint" Value="Имя первого игрока"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBox.Style>
-                </TextBox>
+                        <TextBox.Style>
+                            <Style BasedOn="{StaticResource MaterialDesignTextBox}" TargetType="{x:Type TextBox}">
+                                <Setter Property="materialDesign:HintAssist.Hint" Value="Имя игрока" />
+                                <Style.Triggers>
+                                    <DataTrigger
+                                        Binding="{Binding SelectedGameType,
+                                                          UpdateSourceTrigger=PropertyChanged,
+                                                          Mode=OneWay}"
+                                        Value="{x:Static materialDesign:PackIconKind.PersonMultiple}">
+                                        <Setter Property="materialDesign:HintAssist.Hint" Value="Имя первого игрока" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
 
-                <StackPanel Orientation="Horizontal"
-                            Margin="0,5,0,0"
-                            ToolTip="Другие игроки не смогут отправлять вам запрос на совместную игру"
-                            Visibility="{Binding SelectedGameType,
-                                                 Converter={StaticResource enumToVisibilityConverter},
-                                                 ConverterParameter={x:Static materialDesign:PackIconKind.LanConnect}}">
-                    <ToggleButton HorizontalAlignment="Left"
-                                  Style="{StaticResource MaterialDesignSwitchToggleButton}"
-                                  IsChecked="{Binding CanBeChallenged,
-                                                  UpdateSourceTrigger=PropertyChanged,
-                                                  Mode=TwoWay}" />
-                    <TextBlock Text="Невидимка"
-                               Margin="5,0,0,0" />
-                </StackPanel>
-
-                <TextBox materialDesign:HintAssist.Hint="Имя второго игрока"
-                         Margin="0,0,5,0"
-                         Visibility="{Binding SelectedGameType,
-                                              Converter={StaticResource enumToVisibilityConverter},
-                                              ConverterParameter={x:Static materialDesign:PackIconKind.PersonMultiple}}"
-                         Text="{Binding SecondPlayerName,
-                                        UpdateSourceTrigger=PropertyChanged,
-                                        Mode=TwoWay}"/>
+                    <TextBox materialDesign:HintAssist.Hint="Имя второго игрока"
+                             Margin="0,0,5,0"
+                             MaxLength="25"
+                             Visibility="{Binding SelectedGameType,
+                                                  Converter={StaticResource enumToVisibilityConverter},
+                                                  ConverterParameter={x:Static materialDesign:PackIconKind.PersonMultiple}}"
+                             Text="{Binding SecondPlayerName,
+                                            UpdateSourceTrigger=PropertyChanged,
+                                            Mode=TwoWay}" />
                 </StackPanel>
 
                 <Button Margin="0 10 5 10"
@@ -106,12 +98,13 @@
                         Command="{Binding GoToPlayersLobbyCommand}">
                     <Button.Style>
                         <Style BasedOn="{StaticResource MaterialDesignFlatDarkBgButton}" TargetType="{x:Type Button}">
-                            <Setter Property="Content" Value="Играть"/>
+                            <Setter Property="Content" Value="Играть" />
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding SelectedGameType,
-                                                               UpdateSourceTrigger=PropertyChanged}"
-                                             Value="{x:Static materialDesign:PackIconKind.LanConnect}">
-                                    <Setter Property="Content" Value="Подключиться"/>
+                                <DataTrigger
+                                    Binding="{Binding SelectedGameType,
+                                                      UpdateSourceTrigger=PropertyChanged}"
+                                                      Value="{x:Static materialDesign:PackIconKind.LanConnect}">
+                                    <Setter Property="Content" Value="Подключиться" />
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -120,14 +113,15 @@
             </StackPanel>
         </Grid>
 
-        <Grid Background="#80000000" Visibility="{Binding IsLoading, Converter={StaticResource boolToVisibilityConverter}}">
+        <Grid Background="#80000000"
+              Visibility="{Binding IsLoading, Converter={StaticResource boolToVisibilityConverter}}">
             <materialDesign:Card Width="30"
                                  Height="30"
                                  Padding="4"
                                  UniformCornerRadius="14">
                 <ProgressBar IsIndeterminate="True"
                              Style="{StaticResource MaterialDesignCircularProgressBar}"
-                             Value="50" />
+                             Value="35" />
             </materialDesign:Card>
         </Grid>
     </Grid>

@@ -1,13 +1,21 @@
-using DotsAndBoxesServerAPI.Models;
+using DotsAndBoxesServer.GameLogic;
 using DotsAndBoxesServer.HubFilters;
 using DotsAndBoxesServer.Hubs;
-using Microsoft.AspNetCore.Mvc;
+using DotsAndBoxesServerAPI.Models;
 using Microsoft.AspNetCore.SignalR;
+using NReco.Logging.File;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Logging.ClearProviders().AddConsole();
-
-builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddLogging(loggingBuilder =>
+                                {
+                                    loggingBuilder.AddFile("Logs/DotsAndBoxesServer_{0:yyyy}-{0:MM}-{0:dd}.log",
+                                                           fileLoggerOpts =>
+                                                               {
+                                                                   fileLoggerOpts.FormatLogFileName = fName => string.Format(fName, DateTime.UtcNow);
+                                                               });
+                                    loggingBuilder.AddConsole();
+                                });
+builder.Services.AddSingleton<PlayersManager>();
 builder.Services.AddSignalR(hubOptions =>
                                 {
                                     hubOptions.EnableDetailedErrors = true;
@@ -19,7 +27,7 @@ app.MapHub<DotsAndBoxesHub>("/dotsAndBoxes");
 
 #region MinimalAPI
 
-app.MapGet("/players/{name}", ([FromRoute] string name) => new Player { Name = "asdasd" });
+app.MapGet("/players", (PlayersManager playersManager) => playersManager.GetConnectedPlayers());
 
 #endregion
 

@@ -5,7 +5,6 @@ namespace DotsAndBoxesServerAPI.Refit;
 
 public interface IGameAPI
 {
-
-    [Get("/players/{name}")]
-    Task<Player> GetConnectedPlayerByNameAsync(string name, CancellationToken cancellationToken = default);
+    [Get("/players")]
+    Task<IEnumerable<Player>> GetConnectedPlayers();
 }
