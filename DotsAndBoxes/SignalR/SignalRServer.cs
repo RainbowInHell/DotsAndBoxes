@@ -24,7 +24,7 @@ public sealed class SignalRServer : IAsyncDisposable
 
     public Action<string> OnPlayerReceiveChallengeAction { get; set; }
 
-    public Action<string> OnPlayerUndoChallengeAction { get; set; }
+    public Action<string> OnPlayerCancelChallengeAction { get; set; }
 
     public Action<string> OnPlayerRejectChallengeAction { get; set; }
 
@@ -78,10 +78,10 @@ public sealed class SignalRServer : IAsyncDisposable
                                   challengeReceiverName => OnPlayerReceiveChallengeAction?.Invoke(challengeReceiverName));
 
         _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerCancelChallenge),
-                                  challengeCancelerName => OnPlayerUndoChallengeAction?.Invoke(challengeCancelerName));
+                                  challengeCancelerName => OnPlayerCancelChallengeAction?.Invoke(challengeCancelerName));
 
         _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerRejectChallenge),
-                                  challengeRejectorName => OnPlayerRejectChallengeAction?.Invoke(challengeRejectorName));
+                                  challengedPlayerName => OnPlayerRejectChallengeAction?.Invoke(challengedPlayerName));
     }
 
     #endregion
@@ -114,11 +114,11 @@ public sealed class SignalRServer : IAsyncDisposable
         }
     }
 
-    public async Task SendChallengeAsync(string toPlayerName)
+    public async Task SendChallengeAsync(string challengedPlayerName)
     {
         try
         {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerSendChallenge), toPlayerName);
+            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerSendChallenge), challengedPlayerName);
         }
         catch (Exception ex)
         {
@@ -140,11 +140,11 @@ public sealed class SignalRServer : IAsyncDisposable
         }
     }
 
-    public async Task UndoChallengeAsync(string toPlayerName)
+    public async Task UndoChallengeAsync(string challengedPlayerName)
     {
         try
         {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerCancelChallenge), toPlayerName);
+            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerCancelChallenge), challengedPlayerName);
         }
         catch (Exception ex)
         {

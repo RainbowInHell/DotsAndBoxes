@@ -50,7 +50,7 @@ public class PlayersManager
         throw new KeyNotFoundException($"Player with connection id '{connectionId}' not found");
     }
 
-    public string GetPlayerConnectionId(string playerName)
+    public string GetConnectionId(string playerName)
     {
         return _connectionIdToPlayer.FirstOrDefault(entry => entry.Value.Name == playerName).Key;
     }

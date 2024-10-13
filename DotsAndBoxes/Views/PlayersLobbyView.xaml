@@ -152,7 +152,7 @@
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                                                          Value="{x:Static Models:PlayerStatus.FreeToPlay}">
-                                                <Setter Property="Fill" Value="Green" />
+                                                <Setter Property="Fill" Value="LawnGreen" />
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                                                          Value="{x:Static Models:PlayerStatus.Challenged}">
@@ -212,7 +212,7 @@
                                     materialDesign:ButtonProgressAssist.IsIndicatorVisible="{Binding WasChallenged, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                                     materialDesign:ButtonProgressAssist.Value="-1"
                                     Margin="0,5,0,5"
-                                IsEnabled="{Binding CanBeChallenged, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}">
+                                    IsEnabled="{Binding CanBeChallenged, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}">
                                 <Button.Style>
                                     <Style TargetType="{x:Type Button}" BasedOn="{StaticResource MaterialDesignFloatingActionDarkButton}">
                                         <Setter Property="Content" Value="{materialDesign:PackIcon Fencing}"/>

@@ -8,24 +8,8 @@ public partial class PlayerSelectableItem : ObservableObject
     [ObservableProperty]
     private string _name;
 
+    [ObservableProperty]
     private PlayerStatus _status;
-    public PlayerStatus Status
-    {
-        get => _status;
-        set
-        {
-            _status = value;
-            OnPropertyChanged();
-
-            CanBeChallenged = (_status == PlayerStatus.Challenged && WasChallenged) || _status == PlayerStatus.FreeToPlay;
-        }
-    }
-
-    [ObservableProperty]
-    private bool _canBeChallenged = true;
-
-    [ObservableProperty]
-    private bool _wasChallenged;
 
     [ObservableProperty]
     private GridToPlayType _preferredGridType;
@@ -33,11 +17,22 @@ public partial class PlayerSelectableItem : ObservableObject
     [ObservableProperty]
     private GridToPlaySize _preferredGridSize;
 
+    [ObservableProperty]
+    private bool _canBeChallenged = true;
+
+    [ObservableProperty]
+    private bool _wasChallenged;
+
     public PlayerSelectableItem(Player player)
     {
         Name = player.Name;
         Status = player.Status;
         PreferredGridType = GridToPlayType.Default;
         PreferredGridSize = GridToPlaySize.FiveToFive;
+    }
+
+    partial void OnStatusChanged(PlayerStatus value)
+    {
+        CanBeChallenged = value == PlayerStatus.Challenged && WasChallenged || value == PlayerStatus.FreeToPlay;
     }
 }
