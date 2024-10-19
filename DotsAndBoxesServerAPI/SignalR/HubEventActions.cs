@@ -8,14 +8,18 @@ public static class HubEventActions
     {
         HubEventActionNames = new Dictionary<HubEventActionType, string>
         {
-            { HubEventActionType.OnNewPlayerConnect, HubEventActionType.OnNewPlayerConnect.ToString() },
-            { HubEventActionType.OnPlayerUpdateSettings, HubEventActionType.OnPlayerUpdateSettings.ToString() },
+            { HubEventActionType.OnPlayerConnect, HubEventActionType.OnPlayerConnect.ToString() },
             { HubEventActionType.OnPlayerDisconnect, HubEventActionType.OnPlayerDisconnect.ToString() },
-            { HubEventActionType.OnPlayerSendChallenge, HubEventActionType.OnPlayerSendChallenge.ToString() },
-            { HubEventActionType.OnPlayerReceiveChallenge, HubEventActionType.OnPlayerReceiveChallenge.ToString() },
-            { HubEventActionType.OnPlayerCancelChallenge, HubEventActionType.OnPlayerCancelChallenge.ToString() },
-            { HubEventActionType.OnPlayerRejectChallenge, HubEventActionType.OnPlayerRejectChallenge.ToString() },
-            { HubEventActionType.OnPlayerAcceptChallenge, HubEventActionType.OnPlayerAcceptChallenge.ToString() }
+            { HubEventActionType.OnPlayerUpdateSettings, HubEventActionType.OnPlayerUpdateSettings.ToString() },
+            { HubEventActionType.OnPlayerChangeStatus, HubEventActionType.OnPlayerChangeStatus.ToString() },
+
+            { HubEventActionType.OnChallenge, HubEventActionType.OnChallenge.ToString() },
+
+            { HubEventActionType.OnChallengeCancel, HubEventActionType.OnChallengeCancel.ToString() },
+
+            { HubEventActionType.OnChallengeReject, HubEventActionType.OnChallengeReject.ToString() },
+
+            { HubEventActionType.OnChallengeAccept, HubEventActionType.OnChallengeAccept.ToString() }
         };
     }
 

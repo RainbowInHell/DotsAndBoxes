@@ -64,15 +64,31 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
         _gameAPI = gameAPI;
         _signalRServer = signalRServer;
 
-        _signalRServer.OnNewPlayerConnectAction += OnPlayerConnect;
+        _signalRServer.OnPlayerConnectAction += OnPlayerConnect;
         _signalRServer.OnPlayerDisconnectAction += OnPlayerDisconnect;
-
         _signalRServer.OnPlayerUpdateSettingsAction += OnPlayerUpdateSettings;
+        _signalRServer.OnPlayerChangeStatusAction += OnPlayerChangeStatus;
 
-        _signalRServer.OnPlayerSendChallengeAction += OnPlayerSendChallenge;
-        _signalRServer.OnPlayerReceiveChallengeAction += OnPlayerReceiveChallenge;
-        _signalRServer.OnPlayerCancelChallengeAction += OnPlayerCancelChallenge;
-        _signalRServer.OnPlayerRejectChallengeAction += OnPlayerRejectChallenge;
+        _signalRServer.OnChallengeAction += OnChallenge;
+        _signalRServer.OnChallengeCancelAction += OnChallengeCancel;
+        _signalRServer.OnChallengeRejectAction += OnChallengeReject;
+        _signalRServer.OnChallengeAcceptAction += OnChallengeAccept;
+
+        _signalRServer.OnReconnectingAction += OnReconnecting;
+        _signalRServer.OnReconnectedAction += OnReconnected;
+    }
+
+    private void OnReconnected()
+    {
+        ConnectionLost = false;
+    }
+
+    [ObservableProperty]
+    private bool _connectionLost;
+
+    private void OnReconnecting()
+    {
+        ConnectionLost = true;
     }
 
     #region Properties
@@ -143,6 +159,8 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
 
     #region ServerEventHandlers
 
+    #region StateEvents
+
     private void OnPlayerConnect(Player player)
     {
         DispatcherHelper.InvokeMethodInCorrectThread(() =>
@@ -180,70 +198,69 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
         playerToUpdate.PreferredGridSize = updatedPlayer.Settings.GridToPlaySize;
     }
 
-    private void OnPlayerSendChallenge(string challengeSenderName)
+    #endregion
+
+    /// <summary>
+    /// Occurs when current player receive challenge.
+    /// </summary>
+    /// <param name="challengeSenderName">Challenge sender name.</param>
+    private void OnChallenge(string challengeSenderName)
     {
         ReceiveChallenge = true;
         ChallengeSenderName = challengeSenderName;
         ChallengeMessage = $"Приглашение на совместную игру от {ChallengeSenderName}";
     }
 
-    private void OnPlayerReceiveChallenge(string challengedPlayerName)
+    /// <summary>
+    /// Occurs when someone of the connected players was challenged.
+    /// </summary>
+    /// <param name="playerName">Player which status was changed.</param>
+    /// <param name="newStatus">New status.</param>
+    private void OnPlayerChangeStatus(string playerName, PlayerStatus newStatus)
     {
+        var existedPlayer = Players.FirstOrDefault(x => x.Name == playerName);
+        if (existedPlayer is null)
+        {
+            return;
+        }
+
+        existedPlayer.Status = newStatus;
+    }
+
+    /// <summary>
+    /// Occurs when challenge sender for current player cancel the challenge.
+    /// </summary>
+    private void OnChallengeCancel()
+    {
+        ReceiveChallenge = false;
+        DispatcherHelper.InvokeMethodInCorrectThread(() =>
+                                                          {
+                                                              _ = MessageBox.Show($"Игрок {ChallengeSenderName} отменил приглашение.", MsgBoxButton.OK, MsgBoxImage.Information);
+                                                          });
+    }
+
+    private void OnChallengeReject()
+    {
+        var challengedPlayer = Players.First(x => x.WasChallenged);
+        challengedPlayer.WasChallenged = false;
+
         DispatcherHelper.InvokeMethodInCorrectThread(() =>
                                                          {
-                                                             var challengedPlayer = Players.FirstOrDefault(x => x.Name == challengedPlayerName);
-                                                             if (challengedPlayer is null)
-                                                             {
-                                                                 return;
-                                                             }
-
-                                                             challengedPlayer.Status = PlayerStatus.Challenged;
+                                                             _ = MessageBox.Show($"Игрок {challengedPlayer.Name} отклонил приглашение.", MsgBoxButton.OK, MsgBoxImage.Information);
                                                          });
     }
 
-    private void OnPlayerCancelChallenge(string challengeCancelerName)
+    private void OnChallengeAccept(string challengedPlayerName)
     {
-        DispatcherHelper.InvokeMethodInCorrectThread(() =>
-                                                         {
-                                                             // If ReceiveChallenge is set, it means we have received a cancel offer.
-                                                             if (ReceiveChallenge)
-                                                             {
-                                                                 ReceiveChallenge = false;
-                                                                 _ = MessageBox.Show($"Игрок {challengeCancelerName} отменил приглашение.", MsgBoxButton.OK, MsgBoxImage.Information);
-                                                             }
-                                                             // The player is now free, and we have to update his status.
-                                                             else
-                                                             {
-                                                                 var challengedPlayer = Players.FirstOrDefault(x => x.Name == challengeCancelerName);
-                                                                 if (challengedPlayer is null)
-                                                                 {
-                                                                     return;
-                                                                 }
+        ReceiveChallenge = false;
 
-                                                                 challengedPlayer.Status = PlayerStatus.FreeToPlay;
-                                                             }
-                                                         });
-    }
-
-    private void OnPlayerRejectChallenge(string challengedPlayerName)
-    {
-        DispatcherHelper.InvokeMethodInCorrectThread(() =>
-                                                         {
-                                                             var challengedPlayer = Players.FirstOrDefault(x => x.Name == challengedPlayerName);
-                                                             if (challengedPlayer is null)
-                                                             {
-                                                                 return;
-                                                             }
-
-                                                             // The player is now free, and we have to update his state and status.
-                                                             if (challengedPlayer.WasChallenged)
-                                                             {
-                                                                 challengedPlayer.WasChallenged = false;
-                                                                 _ = MessageBox.Show($"Игрок {challengedPlayerName} отклонил приглашение.", MsgBoxButton.OK, MsgBoxImage.Information);
-                                                             }
-
-                                                             challengedPlayer.Status = PlayerStatus.FreeToPlay;
-                                                         });
+        var a = challengedPlayerName;
+        var a1 = CurrentPlayerName;
+        var a2 = ChallengeSenderName;
+        _navigationService.Navigate(Routes.Game, new DynamicDictionary((nameof(CurrentPlayerName), CurrentPlayerName),
+                                                                       (nameof(ChallengeSenderName), ChallengeSenderName),
+                                                                       (nameof(SelectedGridType), SelectedGridType),
+                                                                       (nameof(SelectedGridSize), SelectedGridSize)));
     }
 
     #endregion
@@ -322,6 +339,10 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
         {
             ReceiveChallenge = false;
             await _signalRServer.SendChallengeAnswerAsync(true, ChallengeSenderName).ConfigureAwait(false);
+            await _navigationService.NavigateAsync(Routes.Game, new DynamicDictionary((nameof(CurrentPlayerName), CurrentPlayerName),
+                                                                                      (nameof(ChallengeSenderName), ChallengeSenderName),
+                                                                                      (nameof(SelectedGridType), SelectedGridType),
+                                                                                      (nameof(SelectedGridSize), SelectedGridSize)));
         }
         catch (Exception e)
         {
@@ -348,15 +369,15 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
 
     public override void Dispose()
     {
-        _signalRServer.OnNewPlayerConnectAction -= OnPlayerConnect;
+        _signalRServer.OnPlayerConnectAction -= OnPlayerConnect;
         _signalRServer.OnPlayerDisconnectAction -= OnPlayerDisconnect;
-
         _signalRServer.OnPlayerUpdateSettingsAction -= OnPlayerUpdateSettings;
+        _signalRServer.OnPlayerChangeStatusAction -= OnPlayerChangeStatus;
 
-        _signalRServer.OnPlayerSendChallengeAction -= OnPlayerSendChallenge;
-        _signalRServer.OnPlayerReceiveChallengeAction -= OnPlayerReceiveChallenge;
-        _signalRServer.OnPlayerCancelChallengeAction -= OnPlayerCancelChallenge;
-        _signalRServer.OnPlayerRejectChallengeAction -= OnPlayerRejectChallenge;
+        _signalRServer.OnChallengeAction -= OnChallenge;
+        _signalRServer.OnChallengeCancelAction -= OnChallengeCancel;
+        _signalRServer.OnChallengeRejectAction -= OnChallengeReject;
+        _signalRServer.OnChallengeAcceptAction -= OnChallengeAccept;
     }
 
     #endregion

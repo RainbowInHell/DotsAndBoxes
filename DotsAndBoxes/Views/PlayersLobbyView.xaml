@@ -17,14 +17,14 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Column="0"
+        <TextBlock Grid.Row="0"
                    Margin="30,5,0,0"
                    Text="{Binding CurrentPlayerName, UpdateSourceTrigger=PropertyChanged, Mode=OneTime}" />
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition/>
-                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <Expander Grid.Column="0"
@@ -32,42 +32,43 @@
                       HorizontalAlignment="Stretch"
                       materialDesign:ExpanderAssist.ExpanderButtonPosition="Start"
                       Header="Настройки">
-            <StackPanel Orientation="Horizontal" Margin="5,5,5,5" HorizontalAlignment="Left">
-                <!-- Grid type -->
-                <ComboBox Margin="25,5,5,5"
-                          ItemsSource="{Binding GridTypes}"
-                          SelectedItem="{Binding SelectedGridType}"
-                          materialDesign:HintAssist.Hint="Тип сетки"
-                          materialDesign:HintAssist.IsFloating="True">
-                    <ComboBox.ItemTemplate >
-                        <DataTemplate DataType="{x:Type Models:GridToPlayType}">
-                            <TextBlock Text="{Binding ., Converter={StaticResource enumToDisplayNameConverter}}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+                <StackPanel Orientation="Horizontal" Margin="5,5,5,5" HorizontalAlignment="Left">
+                    <!-- Grid type -->
+                    <ComboBox Margin="25,5,5,5"
+                              ItemsSource="{Binding GridTypes}"
+                              SelectedItem="{Binding SelectedGridType}"
+                              materialDesign:HintAssist.Hint="Тип сетки"
+                              materialDesign:HintAssist.IsFloating="True">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type Models:GridToPlayType}">
+                                <TextBlock Text="{Binding ., Converter={StaticResource enumToDisplayNameConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
-                <!-- Grid size -->
-                <ComboBox Margin="5,5,5,5"
-                          ItemsSource="{Binding GridSizes}"
-                          SelectedItem="{Binding SelectedGridSize}"
-                          materialDesign:HintAssist.Hint="Размер сетки"
-                          materialDesign:HintAssist.IsFloating="True">
-                    <ComboBox.ItemTemplate >
-                        <DataTemplate DataType="{x:Type Models:GridToPlaySize}">
-                            <TextBlock Text="{Binding ., Converter={StaticResource enumToDisplayNameConverter}}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                </ComboBox>
+                    <!-- Grid size -->
+                    <ComboBox Margin="5,5,5,5"
+                              ItemsSource="{Binding GridSizes}"
+                              SelectedItem="{Binding SelectedGridSize}"
+                              materialDesign:HintAssist.Hint="Размер сетки"
+                              materialDesign:HintAssist.IsFloating="True">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type Models:GridToPlaySize}">
+                                <TextBlock Text="{Binding ., Converter={StaticResource enumToDisplayNameConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
 
-                <!-- Do not disturb -->
-                <ToggleButton HorizontalAlignment="Left"
-                              ToolTip="Другие игроки не смогут отправлять вам запрос на совместную игру"
-                              Margin="5,0,0,0"
-                              Style="{StaticResource MaterialDesignSwitchToggleButton}"
-                              IsChecked="{Binding DoNotDisturb, UpdateSourceTrigger=PropertyChanged ,Mode=OneWayToSource}"/>
+                    <!-- Do not disturb -->
+                    <ToggleButton HorizontalAlignment="Left"
+                                  ToolTip="Другие игроки не смогут отправлять вам запрос на совместную игру"
+                                  Margin="5,0,0,0"
+                                  Style="{StaticResource MaterialDesignSwitchToggleButton}"
+                                  IsChecked="{Binding DoNotDisturb, UpdateSourceTrigger=PropertyChanged ,Mode=OneWayToSource}" />
 
-                <!-- Update settings button -->
-                <Button Visibility="{Binding SettingsUpdateStarted, UpdateSourceTrigger=PropertyChanged ,Mode=OneWay,
+                    <!-- Update settings button -->
+                    <Button
+                        Visibility="{Binding SettingsUpdateStarted, UpdateSourceTrigger=PropertyChanged ,Mode=OneWay,
                                              Converter={StaticResource boolToVisibilityConverter}, ConverterParameter=Invert}"
                         Content="{materialDesign:PackIcon Autorenew}"
                         ToolTip="Обновить настройки"
@@ -76,41 +77,19 @@
                         Height="24"
                         Style="{StaticResource MaterialDesignIconButton}"
                         Command="{Binding UpdateSettingsCommand}">
-                </Button>
+                    </Button>
 
-                <ProgressBar Visibility="{Binding SettingsUpdateStarted, UpdateSourceTrigger=PropertyChanged ,Mode=OneWay,
+                    <ProgressBar
+                        Visibility="{Binding SettingsUpdateStarted, UpdateSourceTrigger=PropertyChanged ,Mode=OneWay,
                                                   Converter={StaticResource boolToVisibilityConverter}}"
-                             IsIndeterminate="True"
-                             Margin="5,0,0,0"
-                             Width="24"
-                             Height="24"
-                             Style="{StaticResource MaterialDesignCircularProgressBar}"
-                             Value="35" />
-            </StackPanel>
-        </Expander>
-
-            <StackPanel Grid.Column="1"
-                        Orientation="Horizontal"
-                        VerticalAlignment="Top"
-                        Margin="0,10,0,0"
-                        Visibility="{Binding ReceiveChallenge, UpdateSourceTrigger=PropertyChanged, Mode=OneWay,
-                                             Converter={StaticResource boolToVisibilityConverter}}">
-                <TextBlock Text="{Binding ChallengeMessage, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                           VerticalAlignment="Center"
-                           Margin="0,0,5,0"/>
-                <Button Width="24"
+                        IsIndeterminate="True"
+                        Margin="5,0,0,0"
+                        Width="24"
                         Height="24"
-                        Margin="0,0,5,0"
-                        Style="{StaticResource MaterialDesignFloatingActionDarkButton}"
-                        Content="{materialDesign:PackIcon Close}"
-                        Command="{Binding RejectChallengeCommand}"/>
-                <Button Width="24"
-                        Height="24"
-                        Margin="0,0,5,0"
-                        Style="{StaticResource MaterialDesignFloatingActionDarkButton}"
-                        Content="{materialDesign:PackIcon Check}"
-                        Command="{Binding AcceptChallengeCommand}"/>
-            </StackPanel>
+                        Style="{StaticResource MaterialDesignCircularProgressBar}"
+                        Value="35" />
+                </StackPanel>
+            </Expander>
         </Grid>
 
         <DataGrid Grid.Row="2"
@@ -150,16 +129,19 @@
                                                 Value="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay,
                                                                 Converter={StaticResource enumToDisplayNameConverter}}" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                                                         Value="{x:Static Models:PlayerStatus.FreeToPlay}">
+                                            <DataTrigger
+                                                Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                Value="{x:Static Models:PlayerStatus.FreeToPlay}">
                                                 <Setter Property="Fill" Value="LawnGreen" />
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                                                         Value="{x:Static Models:PlayerStatus.Challenged}">
+                                            <DataTrigger
+                                                Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                Value="{x:Static Models:PlayerStatus.Challenged}">
                                                 <Setter Property="Fill" Value="Orange" />
                                             </DataTrigger>
-                                            <DataTrigger Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
-                                                         Value="{x:Static Models:PlayerStatus.Playing}">
+                                            <DataTrigger
+                                                Binding="{Binding Status, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                                                Value="{x:Static Models:PlayerStatus.Playing}">
                                                 <Setter Property="Fill" Value="Red" />
                                             </DataTrigger>
                                         </Style.Triggers>
@@ -214,11 +196,12 @@
                                     Margin="0,5,0,5"
                                     IsEnabled="{Binding CanBeChallenged, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}">
                                 <Button.Style>
-                                    <Style TargetType="{x:Type Button}" BasedOn="{StaticResource MaterialDesignFloatingActionDarkButton}">
-                                        <Setter Property="Content" Value="{materialDesign:PackIcon Fencing}"/>
+                                    <Style TargetType="{x:Type Button}"
+                                           BasedOn="{StaticResource MaterialDesignFloatingActionDarkButton}">
+                                        <Setter Property="Content" Value="{materialDesign:PackIcon Fencing}" />
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding WasChallenged}" Value="True">
-                                                <Setter Property="Content" Value="{materialDesign:PackIcon Close}"/>
+                                                <Setter Property="Content" Value="{materialDesign:PackIcon Close}" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
@@ -229,5 +212,99 @@
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
+
+        <!-- Challenge notification -->
+        <materialDesign:Card Style="{StaticResource MaterialDesignOutlinedCard}"
+                             Grid.Row="0"
+                             Grid.RowSpan="3"
+                             Visibility="{Binding ReceiveChallenge, UpdateSourceTrigger=PropertyChanged, Mode=OneWay,
+                                                  Converter={StaticResource boolToVisibilityConverter}}"
+                             Margin="10"
+                             HorizontalAlignment="Right"
+                             VerticalAlignment="Top"
+                             UniformCornerRadius="25">
+            <Grid Width="350">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0"
+                           Margin="5,5,5,20"
+                           FontSize="18"
+                           Text="{Binding ChallengeMessage}"
+                           TextAlignment="Center"
+                           TextWrapping="Wrap" />
+                <StackPanel Grid.Row="1"
+                            Margin="10"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal">
+                    <RepeatButton Margin="0,0,10,0"
+                                  materialDesign:ButtonAssist.CornerRadius="16"
+                                  Command="{Binding AcceptChallengeCommand}"
+                                  Content="Принять"
+                                  Style="{StaticResource MaterialDesignFlatButton}" />
+                    <Button materialDesign:ButtonAssist.CornerRadius="16"
+                            Command="{Binding RejectChallengeCommand}"
+                            Content="Отклонить"
+                            Style="{StaticResource MaterialDesignFlatMidBgButton}" />
+                </StackPanel>
+            </Grid>
+        </materialDesign:Card>
+
+        <!-- <Grid Grid.Row="0" Grid.RowSpan="3" Background="#80000000" -->
+        <!--       Visibility="{Binding Connected, Converter={StaticResource boolToVisibilityConverter}}"> -->
+        <!--     <Grid.RowDefinitions> -->
+        <!--         <RowDefinition/> -->
+        <!--         <RowDefinition/> -->
+        <!--     </Grid.RowDefinitions> -->
+        <!--     <ProgressBar Grid.Row="0" -->
+        <!--         Margin="16" -->
+        <!--         HorizontalAlignment="Center" -->
+        <!--         VerticalAlignment="Bottom" -->
+        <!--         IsIndeterminate="True" -->
+        <!--         Style="{StaticResource MaterialDesignCircularProgressBar}" -->
+        <!--         Value="0" /> -->
+        <!--     <Button Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Center"/> -->
+        <!-- -->
+        <!-- </Grid> -->
+        <!-- <Grid Grid.Row="0" Grid.RowSpan="3" Background="#80000000" -->
+        <!--       Visibility="{Binding Connected, Converter={StaticResource boolToVisibilityConverter}}"> -->
+        <!--     <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center"> -->
+        <!--         <ProgressBar IsIndeterminate="True" -->
+        <!--                      Style="{StaticResource MaterialDesignCircularProgressBar}" -->
+        <!--                      Value="35" -->
+        <!--                      VerticalAlignment="Center" HorizontalAlignment="Center"/> -->
+        <!--         <Button VerticalAlignment="Center" HorizontalAlignment="Center"/> -->
+        <!--     </StackPanel> -->
+        <!-- </Grid> -->
+        <Grid Grid.Row="0" Grid.RowSpan="3" Background="#80000000"
+              Visibility="{Binding ConnectionLost, Converter={StaticResource boolToVisibilityConverter}}">
+            <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center">
+        
+                <!-- Reconnection Message -->
+                <TextBlock Text="Attempting to reconnect to the server..." 
+                           Foreground="White" 
+                           FontSize="16"
+                           HorizontalAlignment="Center" />
+        
+                <!-- Circular Progress Bar -->
+                <ProgressBar IsIndeterminate="True"
+                             Width="100" Height="100"
+                             Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             VerticalAlignment="Center" 
+                             HorizontalAlignment="Center" />
+
+                <!-- Cancel Button -->
+                <Button Content="Cancel"
+                        Command="{Binding CancelReconnectionCommand}" 
+                        Style="{StaticResource MaterialDesignFlatButton}"
+                        Padding="10,5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource PrimaryHueMidBrush}" 
+                        Foreground="White" />
+            </StackPanel>
+        </Grid>
+
     </Grid>
 </Page>

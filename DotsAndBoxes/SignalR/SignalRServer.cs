@@ -12,21 +12,24 @@ public sealed class SignalRServer : IAsyncDisposable
 
     private readonly ILogger<SignalRServer> _logger;
 
-    #region ServerEventHandlers
+    #region StateEvents
 
-    public Action<Player> OnNewPlayerConnectAction { get; set; }
-
+    public Action<Player> OnPlayerConnectAction { get; set; }
     public Action<string> OnPlayerDisconnectAction { get; set; }
-
     public Action<Player> OnPlayerUpdateSettingsAction { get; set; }
+    public Action<string, PlayerStatus> OnPlayerChangeStatusAction { get; set; }
 
-    public Action<string> OnPlayerSendChallengeAction { get; set; }
+    public Action OnReconnectingAction { get; set; }
+    public Action OnReconnectedAction { get; set; }
 
-    public Action<string> OnPlayerReceiveChallengeAction { get; set; }
+    #endregion
 
-    public Action<string> OnPlayerCancelChallengeAction { get; set; }
+    #region ChallengeEvents
 
-    public Action<string> OnPlayerRejectChallengeAction { get; set; }
+    public Action<string> OnChallengeAction { get; set; }
+    public Action OnChallengeCancelAction { get; set; }
+    public Action OnChallengeRejectAction { get; set; }
+    public Action<string> OnChallengeAcceptAction { get; set; }
 
     #endregion
 
@@ -36,8 +39,14 @@ public sealed class SignalRServer : IAsyncDisposable
 
         var hubAddress = ConfigurationManager.AppSettings["HubAddress"];
 
-        _hubConnection = new HubConnectionBuilder().WithUrl(hubAddress!).Build();
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(hubAddress!)
+            .WithAutomaticReconnect([TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30)])
+            .Build();
+
         _hubConnection.Closed += OnConnectionClosed;
+        _hubConnection.Reconnecting += OnReconnecting;
+        _hubConnection.Reconnected += OnReconnected;
 
         SetupServerEventsListening();
     }
@@ -62,8 +71,8 @@ public sealed class SignalRServer : IAsyncDisposable
 
     private void SetupServerEventsListening()
     {
-        _hubConnection.On<Player>(HubEventActions.GetHubEventActionName(HubEventActionType.OnNewPlayerConnect),
-                                  newPlayer => OnNewPlayerConnectAction?.Invoke(newPlayer));
+        _hubConnection.On<Player>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerConnect),
+                                  newPlayer => OnPlayerConnectAction?.Invoke(newPlayer));
 
         _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerDisconnect),
                                   disconnectedPlayerName => OnPlayerDisconnectAction?.Invoke(disconnectedPlayerName));
@@ -71,17 +80,24 @@ public sealed class SignalRServer : IAsyncDisposable
         _hubConnection.On<Player>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerUpdateSettings),
                                   updatedPlayer => OnPlayerUpdateSettingsAction?.Invoke(updatedPlayer));
 
-        _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerSendChallenge),
-                                  challengeSenderName => OnPlayerSendChallengeAction?.Invoke(challengeSenderName));
+        _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallenge),
+                                  challengeSenderName => OnChallengeAction?.Invoke(challengeSenderName));
 
-        _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerReceiveChallenge),
-                                  challengeReceiverName => OnPlayerReceiveChallengeAction?.Invoke(challengeReceiverName));
+        _hubConnection.On<string, PlayerStatus>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus),
+                                  (playerName, newStatus) => OnPlayerChangeStatusAction?.Invoke(playerName, newStatus));
 
-        _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerCancelChallenge),
-                                  challengeCancelerName => OnPlayerCancelChallengeAction?.Invoke(challengeCancelerName));
+        _hubConnection.On(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeCancel), () =>
+                                                                                                           {
+                                                                                                               OnChallengeCancelAction?.Invoke();
+                                                                                                           });
 
-        _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerRejectChallenge),
-                                  challengedPlayerName => OnPlayerRejectChallengeAction?.Invoke(challengedPlayerName));
+        _hubConnection.On(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeReject), () =>
+                                                                                                           {
+                                                                                                               OnChallengeRejectAction?.Invoke();
+                                                                                                           });
+
+        _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeAccept),
+                                  challengedPlayerName => OnChallengeAcceptAction?.Invoke(challengedPlayerName));
     }
 
     #endregion
@@ -92,7 +108,7 @@ public sealed class SignalRServer : IAsyncDisposable
     {
         try
         {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.NewPlayerConnect), player);
+            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerConnect), player);
         }
         catch (Exception ex)
         {
@@ -155,11 +171,29 @@ public sealed class SignalRServer : IAsyncDisposable
 
     #endregion
 
+    private Task OnReconnecting(Exception exception)
+    {
+        _logger.LogWarning("Attempting to reconnect...");
+        OnReconnectingAction?.Invoke();
+        return Task.CompletedTask;
+    }
+
+    private Task OnReconnected(string connectionId)
+    {
+        _logger.LogInformation("Reconnected successfully. Connection ID: {connectionId}", connectionId);
+        OnReconnectedAction?.Invoke();
+        return Task.CompletedTask;
+    }
+
     private Task OnConnectionClosed(Exception exception)
     {
         if (exception is not null)
         {
             _logger.LogError("Connection closed due to an error: {ex}", exception);
+        }
+        else
+        {
+            _logger.LogWarning("Connection closed gracefully.");
         }
 
         return Task.CompletedTask;

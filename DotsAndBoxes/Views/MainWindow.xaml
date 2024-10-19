@@ -19,6 +19,9 @@
             <DataTemplate DataType="{x:Type vms:PlayersLobbyViewModel}">
                 <views:PlayersLobbyView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vms:GameViewModel}">
+                <views:GameView />
+            </DataTemplate>
         </Frame.Resources>
     </Frame>
 </Window>

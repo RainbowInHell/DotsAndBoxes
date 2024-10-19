@@ -8,7 +8,7 @@ public static class ServerMethods
     {
         ServerMethodNames = new Dictionary<ServerMethodType, string>
         {
-            { ServerMethodType.NewPlayerConnect, ServerMethodType.NewPlayerConnect.ToString() },
+            { ServerMethodType.PlayerConnect, ServerMethodType.PlayerConnect.ToString() },
             { ServerMethodType.PlayerUpdateSettings, ServerMethodType.PlayerUpdateSettings.ToString() },
             { ServerMethodType.PlayerDisconnect, ServerMethodType.PlayerDisconnect.ToString() },
             { ServerMethodType.PlayerSendChallenge, ServerMethodType.PlayerSendChallenge.ToString() },

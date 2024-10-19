@@ -2,16 +2,12 @@
 {
     public enum ServerMethodType
     {
-        NewPlayerConnect,
-
+        PlayerConnect,
+        PlayerDisconnect,
         PlayerUpdateSettings,
 
         PlayerSendChallenge,
-
         PlayerCancelChallenge,
-
         PlayerSendChallengeAnswer,
-
-        PlayerDisconnect
     }
 }

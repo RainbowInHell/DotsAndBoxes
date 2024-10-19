@@ -3,7 +3,7 @@ using DotsAndBoxes.Navigation;
 
 namespace DotsAndBoxes.ViewModels;
 
-public class MainViewModel : ObservableObject, IDisposable
+public sealed class MainViewModel : ObservableObject, IDisposable
 {
     private readonly INavigationService<BaseViewModel> _navigationService;
 
@@ -13,6 +13,7 @@ public class MainViewModel : ObservableObject, IDisposable
         _navigationService.OnNavigated += OnNavigated;
 
         _navigationService.Navigate(Routes.Home);
+        // _navigationService.Navigate(Routes.Game);
     }
 
     public BaseViewModel CurrentViewModel => _navigationService.CurrentNavigatedItem;
