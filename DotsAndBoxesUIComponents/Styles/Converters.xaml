@@ -2,8 +2,6 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:DotsAndBoxesUIComponents="clr-namespace:DotsAndBoxesUIComponents">
     <DotsAndBoxesUIComponents:BoolToVisibilityConverter x:Key="boolToVisibilityConverter" />
-    <DotsAndBoxesUIComponents:EnumToVisibilityConverter x:Key="enumToVisibilityConverter" />
     <DotsAndBoxesUIComponents:EnumToDisplayNameConverter x:Key="enumToDisplayNameConverter" />
-    <DotsAndBoxesUIComponents:EnumToBoolConverter x:Key="enumToBoolConverter" />
-    <DotsAndBoxesUIComponents:MultiBoolToBoolConverter x:Key="multiBoolToBoolConverter" />
+    <DotsAndBoxesUIComponents:EnumToVisibilityConverter x:Key="enumToVisibilityConverter" />
 </ResourceDictionary>

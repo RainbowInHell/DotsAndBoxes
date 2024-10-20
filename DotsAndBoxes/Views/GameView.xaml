@@ -20,23 +20,23 @@
                 <materialDesign:Card UniformCornerRadius="6"
                                      Height="76"
                                      Width="83">
-                    <TextBlock x:Name="ScorePlayer1"
-                               HorizontalAlignment="Center"
+                    <TextBlock HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                FontSize="70"
                                Foreground="DarkBlue"
                                Height="100" />
                 </materialDesign:Card>
                 <materialDesign:Chip Margin="10"
-                                     x:Name="Player1Name"
+                                     Content="{Binding FirstPlayer}"
                                      Icon="1"
                                      Width="100" />
             </StackPanel>
 
-            <materialDesign:Card Margin="20"
+            <materialDesign:Card Style="{StaticResource MaterialDesignOutlinedCard}"
+                                 Margin="20"
                                  UniformCornerRadius="6">
-                <!-- <ContentPresenter Content="{Binding Canvas}" /> -->
                 <StackPanel Width="420" Height="420" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10,10,10,10">
+
                     <!-- Lines -->
                     <ItemsControl ItemsSource="{Binding Lines}">
                         <ItemsControl.ItemsPanel>
@@ -83,6 +83,7 @@
                         </ItemsControl.ItemTemplate>
                     
                     </ItemsControl>
+
                 </StackPanel>
             </materialDesign:Card>
 
@@ -96,7 +97,8 @@
                                Foreground="DarkRed"
                                Height="100" />
                 </materialDesign:Card>
-                <materialDesign:Chip Icon="2"
+                <materialDesign:Chip Content="{Binding SecondPlayer}"
+                                     Icon="2"
                                      Width="100"
                                      Margin="10" />
             </StackPanel>

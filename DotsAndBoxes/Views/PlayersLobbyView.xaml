@@ -251,80 +251,22 @@
             </Grid>
         </materialDesign:Card>
 
-        <!-- <Grid Grid.Row="0" Grid.RowSpan="3" Background="#80000000" -->
-        <!--       Visibility="{Binding Connected, Converter={StaticResource boolToVisibilityConverter}}"> -->
-        <!--     <Grid.RowDefinitions> -->
-        <!--         <RowDefinition/> -->
-        <!--         <RowDefinition/> -->
-        <!--     </Grid.RowDefinitions> -->
-        <!--     <ProgressBar Grid.Row="0" -->
-        <!--         Margin="16" -->
-        <!--         HorizontalAlignment="Center" -->
-        <!--         VerticalAlignment="Bottom" -->
-        <!--         IsIndeterminate="True" -->
-        <!--         Style="{StaticResource MaterialDesignCircularProgressBar}" -->
-        <!--         Value="0" /> -->
-        <!--     <Button Grid.Row="1" VerticalAlignment="Top" HorizontalAlignment="Center"/> -->
-        <!-- -->
-        <!-- </Grid> -->
-        <!-- <Grid Grid.Row="0" Grid.RowSpan="3" Background="#80000000" -->
-        <!--       Visibility="{Binding Connected, Converter={StaticResource boolToVisibilityConverter}}"> -->
-        <!--     <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center"> -->
-        <!--         <ProgressBar IsIndeterminate="True" -->
-        <!--                      Style="{StaticResource MaterialDesignCircularProgressBar}" -->
-        <!--                      Value="35" -->
-        <!--                      VerticalAlignment="Center" HorizontalAlignment="Center"/> -->
-        <!--         <Button VerticalAlignment="Center" HorizontalAlignment="Center"/> -->
-        <!--     </StackPanel> -->
-        <!-- </Grid> -->
-        <!-- <Grid Grid.Row="0" Grid.RowSpan="3" Background="#80000000" -->
-        <!--       Visibility="{Binding ConnectionLost, Converter={StaticResource boolToVisibilityConverter}}"> -->
-        <!--     <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center"> -->
-        <!-- -->
-        <!--         ~1~ Reconnection Message @1@ -->
-        <!--         <TextBlock Text="Attempting to reconnect to the server..."  -->
-        <!--                    Foreground="White"  -->
-        <!--                    FontSize="16" -->
-        <!--                    HorizontalAlignment="Center" /> -->
-        <!-- -->
-        <!--         ~1~ Circular Progress Bar @1@ -->
-        <!--         <ProgressBar IsIndeterminate="True" -->
-        <!--                      Width="100" Height="100" -->
-        <!--                      Style="{StaticResource MaterialDesignCircularProgressBar}" -->
-        <!--                      VerticalAlignment="Center"  -->
-        <!--                      HorizontalAlignment="Center" /> -->
-        <!-- -->
-        <!--         ~1~ Cancel Button @1@ -->
-        <!--         <Button Content="Cancel" -->
-        <!--                 Command="{Binding CancelReconnectionCommand}"  -->
-        <!--                 Style="{StaticResource MaterialDesignFlatButton}" -->
-        <!--                 Padding="10,5" -->
-        <!--                 HorizontalAlignment="Center" -->
-        <!--                 VerticalAlignment="Center" -->
-        <!--                 Background="{DynamicResource PrimaryHueMidBrush}"  -->
-        <!--                 Foreground="White" /> -->
-        <!--     </StackPanel> -->
-        <!-- </Grid> -->
         <Grid Grid.Row="0" Grid.RowSpan="3" Background="#80000000"
-              Visibility="{Binding ConnectionLost, Converter={StaticResource boolToVisibilityConverter}}">
+              Visibility="{Binding ConnectionIsLost, Converter={StaticResource boolToVisibilityConverter}}">
             <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center">
         
-                <!-- Reconnection Message -->
-                <TextBlock Text="Attempting to reconnect to the server..." 
+                <TextBlock Text="Восстановление подключения к серверу..." 
                            Foreground="White" 
                            FontSize="16"
                            HorizontalAlignment="Center" />
 
-                <!-- Progress Bar with Overlayed Text -->
                 <Grid Width="100" Height="100" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <!-- Circular ProgressBar -->
                     <ProgressBar IsIndeterminate="True"
                                  Style="{StaticResource MaterialDesignCircularProgressBar}"
                                  VerticalAlignment="Center"
                                  HorizontalAlignment="Center"
                                  Width="100" Height="100" />
 
-                    <!-- Reconnection Attempts Count inside the ProgressBar -->
                     <TextBlock Text="{Binding ReconnectAttemptsCount, StringFormat=Попытка {0}/5}"
                                FontSize="12" 
                                FontWeight="Bold"
@@ -333,8 +275,7 @@
                                HorizontalAlignment="Center" />
                 </Grid>
 
-                <!-- Cancel Button -->
-                <Button Content="Cancel"
+                <Button Content="Отмена"
                         Command="{Binding CancelReconnectionCommand}" 
                         Style="{StaticResource MaterialDesignFlatButton}"
                         Padding="10,5"

@@ -42,6 +42,12 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
     [ObservableProperty]
     private string _challengeMessage;
 
+    [ObservableProperty]
+    private bool _connectionIsLost;
+
+    [ObservableProperty]
+    private long _reconnectAttemptsCount;
+
     #endregion
 
     private readonly INavigationService<BaseViewModel> _navigationService;
@@ -65,38 +71,43 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         _gameAPI = gameAPI;
         _signalRClient = signalRClient;
 
-        _signalRClient.OnPlayerConnectAction += OnPlayerConnect;
-        _signalRClient.OnPlayerDisconnectAction += OnPlayerDisconnect;
-        _signalRClient.OnPlayerUpdateSettingsAction += OnPlayerUpdateSettings;
-        _signalRClient.OnPlayerChangeStatusAction += OnPlayerChangeStatus;
+        _signalRClient.OnPlayerConnect += OnPlayerConnect;
+        _signalRClient.OnPlayerDisconnect += OnPlayerDisconnect;
+        _signalRClient.OnPlayerUpdateSettings += OnPlayerUpdateSettings;
+        _signalRClient.OnPlayerChangeStatus += OnPlayerChangeStatus;
 
-        _signalRClient.OnChallengeAction += OnChallenge;
-        _signalRClient.OnChallengeCancelAction += OnChallengeCancel;
-        _signalRClient.OnChallengeRejectAction += OnChallengeReject;
-        _signalRClient.OnChallengeAcceptAction += OnChallengeAccept;
+        _signalRClient.OnChallenge += OnChallenge;
+        _signalRClient.OnChallengeCancel += OnChallengeCancel;
+        _signalRClient.OnChallengeReject += OnChallengeReject;
+        _signalRClient.OnChallengeAccept += OnChallengeAccept;
 
-        _signalRClient.OnConnectionStateChangedAction += OnServerConnectionStateChanged;
-        _signalRClient.OnRetry += OnRetry;
+        _signalRClient.OnConnectionStateChanged += OnServerConnectionStateChanged;
+        _signalRClient.ReconnectAttempt += OnReconnect;
     }
 
-    [ObservableProperty]
-    private uint _reconnectAttemptsCount;
-
-    private void OnRetry()
+    private void OnReconnect(long attemptsCount)
     {
-        ++ReconnectAttemptsCount;
-    }
+        if (attemptsCount != SignalRClient.MaxReconnectAttempts)
+        {
+            ReconnectAttemptsCount++;
+            return;
+        }
 
-    [ObservableProperty]
-    private bool _connectionLost;
+        ConnectionIsLost = false;
+        DispatcherHelper.InvokeMethodInCorrectThread(() =>
+                                                         {
+                                                             MessageBox.Show("Не удалось восстановить подключение к серверу.\nТекущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Warning);
+                                                         });
+
+        _navigationService.Navigate(Routes.Home);
+    }
 
     private void OnServerConnectionStateChanged(HubConnectionState newConnectionState)
     {
-        ConnectionLost = newConnectionState switch
+        ConnectionIsLost = newConnectionState switch
         {
-            HubConnectionState.Reconnecting => true,
             HubConnectionState.Connected => false,
-            _ => ConnectionLost
+            _ => true
         };
     }
 
@@ -125,10 +136,8 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
             _selectedGridType = value;
             OnPropertyChanged();
 
-            // Reset selected grid size despite matching types.
             SelectedGridSize = GridToPlaySize.ThreeToThree;
     
-            // For now only third types are different.
             GridSizes[2] = value is GridToPlayType.Default ? GridToPlaySize.SixToSix : GridToPlaySize.SevenToSeven;
             OnPropertyChanged(nameof(GridSizes));
         }
@@ -268,10 +277,8 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         var a = challengedPlayerName;
         var a1 = CurrentPlayerName;
         var a2 = ChallengeSenderName;
-        _navigationService.Navigate(Routes.Game, new DynamicDictionary((nameof(CurrentPlayerName), CurrentPlayerName),
-                                                                       (nameof(ChallengeSenderName), ChallengeSenderName),
-                                                                       (nameof(SelectedGridType), SelectedGridType),
-                                                                       (nameof(SelectedGridSize), SelectedGridSize)));
+        _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayer", CurrentPlayerName),
+                                                                       ("SecondPlayer", challengedPlayerName)));
     }
 
     #endregion
@@ -350,10 +357,8 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         {
             ReceiveChallenge = false;
             await _signalRClient.SendChallengeAnswerAsync(true, ChallengeSenderName).ConfigureAwait(false);
-            _navigationService.Navigate(Routes.Game, new DynamicDictionary((nameof(CurrentPlayerName), CurrentPlayerName),
-                                                                           (nameof(ChallengeSenderName), ChallengeSenderName),
-                                                                           (nameof(SelectedGridType), SelectedGridType),
-                                                                           (nameof(SelectedGridSize), SelectedGridSize)));
+            _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayer", CurrentPlayerName),
+                                                                           ("SecondPlayer", ChallengeSenderName)));
         }
         catch (Exception e)
         {
@@ -380,18 +385,18 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
     public void Dispose()
     {
-        _signalRClient.OnPlayerConnectAction -= OnPlayerConnect;
-        _signalRClient.OnPlayerDisconnectAction -= OnPlayerDisconnect;
-        _signalRClient.OnPlayerUpdateSettingsAction -= OnPlayerUpdateSettings;
-        _signalRClient.OnPlayerChangeStatusAction -= OnPlayerChangeStatus;
+        _signalRClient.OnPlayerConnect -= OnPlayerConnect;
+        _signalRClient.OnPlayerDisconnect -= OnPlayerDisconnect;
+        _signalRClient.OnPlayerUpdateSettings -= OnPlayerUpdateSettings;
+        _signalRClient.OnPlayerChangeStatus -= OnPlayerChangeStatus;
 
-        _signalRClient.OnChallengeAction -= OnChallenge;
-        _signalRClient.OnChallengeCancelAction -= OnChallengeCancel;
-        _signalRClient.OnChallengeRejectAction -= OnChallengeReject;
-        _signalRClient.OnChallengeAcceptAction -= OnChallengeAccept;
+        _signalRClient.OnChallenge -= OnChallenge;
+        _signalRClient.OnChallengeCancel -= OnChallengeCancel;
+        _signalRClient.OnChallengeReject -= OnChallengeReject;
+        _signalRClient.OnChallengeAccept -= OnChallengeAccept;
 
-        _signalRClient.OnConnectionStateChangedAction -= OnServerConnectionStateChanged;
-        _signalRClient.OnRetry -= OnRetry;
+        _signalRClient.OnConnectionStateChanged -= OnServerConnectionStateChanged;
+        _signalRClient.ReconnectAttempt -= OnReconnect;
     }
 
     #endregion

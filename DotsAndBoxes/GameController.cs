@@ -1,140 +1,115 @@
-﻿using System.Collections.ObjectModel;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Windows.Media;
-using DotsAndBoxesServerAPI.Models;
 using DotsAndBoxesUIComponents;
 
 namespace DotsAndBoxes;
 
 public class GameController : StateChecker
 {
-    private GameState _gameState;
+    private const int EllipseSize = 10;
 
-    private GridToPlayType _gameType;
-    private int _gridSize;
+    private const int DefaultWidthHeight = 420;
 
-    private List<Point> _pointList;
-    private Random _random;
+    private int NumberOfRows { get; }
 
-    public int EllipseSize { get; } = 10;
+    private int NumberOfColumns { get; }
 
-    public int TurnId
+    public IReadOnlyList<Point> PointList { get; }
+
+    public IReadOnlyList<LineStructure> LineList { get; }
+
+    public GameController()
     {
-        get => _gameState.TurnId;
-        private set => _gameState.TurnId = value;
+        GameHeight = GameWidth = DefaultWidthHeight / 4;
+        NumberOfColumns = NumberOfRows = 4;
+
+        PointList = CreatePointList();
+        LineList = CreateLineList();
     }
 
-    public ReadOnlyCollection<int> Scores => new ReadOnlyCollection<int>(_gameState.Scores);
-
-    public int NumberOfRows { get; private set; }
-    public int NumberOfColums { get; private set; }
-
-    public int TimeElapsed { get; set; }
-
-    public ReadOnlyCollection<Point> PointList => new ReadOnlyCollection<Point>(_pointList);
-
-    public ReadOnlyCollection<LineStructure> LineList => new ReadOnlyCollection<LineStructure>(_gameState.LineList);
-
-    public void Initialize(double canvasHeight, double canvasWidth)
+    private IReadOnlyList<Point> CreatePointList()
     {
-        _pointList = new List<Point>();
+        var pointList = new List<Point>();
 
-        StartNewGame(canvasWidth);
-    }
-
-    private void StartNewGame(double canvasWidth)
-    {
-        CreateNewGameState();
-
-        GameWidth = (int) canvasWidth / 8;
-        GameHeight = GameWidth;
-        NumberOfRows = 8;
-        NumberOfColums = NumberOfRows;
-
-        CreateEllipsePositionList();
-        CreateLineList(Brushes.Transparent);
-    }
-
-    private void CreateNewGameState()
-    {
-        _gameState = new GameState
-        {
-            GridSize = _gridSize,
-            TurnId = 1,
-            Player1 = "First",
-            Player2 = "Second"
-        };
-    }
-
-    public void CreateEllipsePositionList()
-    {
-        CreateEllipsePositionListForClassicView();
-    }
-
-    public void CreateLineList(Brush brush)
-    {
-        CreateClassicGrid(brush);
-    }
-
-    private void CreateClassicGrid(Brush brush)
-    {
         for (var i = 0; i <= NumberOfRows; ++i)
-        for (var j = 0; j < NumberOfColums; ++j)
-            AddHorizontalLine(j, i, brush);
+        {
+            for (var j = 0; j <= NumberOfColumns; ++j)
+            {
+                pointList.Add(CreatePoint(j, i));
+            }
+        }
+
+        return pointList;
+    }
+
+    private IReadOnlyList<LineStructure> CreateLineList()
+    {
+        var lineList = new List<LineStructure>();
+
+        for (var i = 0; i <= NumberOfRows; ++i)
+        {
+            for (var j = 0; j < NumberOfColumns; ++j)
+            {
+                lineList.Add(CreateHorizontalLine(j, i));
+            }
+        }
 
         for (var i = 0; i < NumberOfRows; ++i)
-        for (var j = 0; j <= NumberOfColums; ++j)
-            AddVerticalLine(j, i, brush);
+        {
+            for (var j = 0; j <= NumberOfColumns; ++j)
+            {
+                lineList.Add(CreateVerticalLine(j, i));
+            }
+        }
+
+        return lineList;
     }
 
-    private void AddHorizontalLine(int positionX, int positionY, Brush brush)
+    private LineStructure CreateHorizontalLine(int positionX, int positionY)
     {
         var x1 = positionX * GameWidth;
         var y1 = positionY * GameHeight;
+
         var x2 = x1 + GameWidth;
         var y2 = y1;
+
         var line = new LineStructure
         {
             X1 = x1,
             Y1 = y1,
             X2 = x2,
             Y2 = y2,
-            Color = brush,
-            // StrokeThickness = 8
+            Color = Brushes.Transparent
         };
-        _gameState.LineList.Add(line);
+
+        return line;
     }
 
-    private void AddVerticalLine(int positionX, int positionY, Brush brush)
+    private LineStructure CreateVerticalLine(int positionX, int positionY)
     {
         var x1 = positionX * GameWidth;
         var y1 = positionY * GameHeight;
+
         var x2 = x1;
         var y2 = y1 + GameHeight;
+
         var line = new LineStructure
         {
             X1 = x1,
             Y1 = y1,
             X2 = x2,
             Y2 = y2,
-            Color = brush,
-            // StrokeThickness = 8
+            Color = Brushes.Transparent
         };
-        _gameState.LineList.Add(line);
+
+        return line;
     }
 
-    private void CreateEllipsePositionListForClassicView()
-    {
-        for (var i = 0; i <= NumberOfRows; ++i)
-        for (var j = 0; j <= NumberOfColums; ++j)
-            AddPoint(j, i);
-    }
-
-    private void AddPoint(int positionX, int positionY)
+    private Point CreatePoint(int positionX, int positionY)
     {
         var x = positionX * GameWidth - EllipseSize / 2;
         var y = positionY * GameHeight - EllipseSize / 2;
 
-        _pointList.Add(new Point(x, y));
+        return new Point(x, y);
     }
 }

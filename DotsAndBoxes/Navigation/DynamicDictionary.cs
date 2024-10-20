@@ -28,9 +28,4 @@ public class DynamicDictionary
 
         return default;
     }
-
-    public void AddValue(string key, object value)
-    {
-        _parameters[key] = value;
-    }
 }

@@ -25,7 +25,6 @@ public class GameViewModel : BaseViewModel
     {
         _signalRClient = signalRClient;
         _gameController = new GameController();
-        _gameController.Initialize(420, 420);
 
         Lines = new(_gameController.LineList);
         Dots = new(_gameController.PointList);
@@ -56,12 +55,19 @@ public class GameViewModel : BaseViewModel
     private async Task ClickLineCommandExecuteAsync(LineStructure line)
     {
         line.Color = _playerColor;
-        await Task.Delay(1);
     }
 
     private bool ClickLineCommandCanExecute(LineStructure line)
     {
         return _canMakeMove && line.Color != _playerColor;
+    }
+
+    public override NavigationResult OnNavigatedTo(NavigationArgs args)
+    {
+        // FirstPlayer = args.Parameters.GetValue<string>(nameof(FirstPlayer));
+        // SecondPlayer = args.Parameters.GetValue<string>(nameof(SecondPlayer));
+
+        return base.OnNavigatedTo(args);
     }
 
     #endregion
