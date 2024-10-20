@@ -5,6 +5,7 @@ using System.Windows.Media;
 using CommunityToolkit.Mvvm.Input;
 using DotsAndBoxes.Attributes;
 using DotsAndBoxes.Navigation;
+using DotsAndBoxes.SignalR;
 using DotsAndBoxesUIComponents;
 
 namespace DotsAndBoxes.ViewModels;
@@ -12,14 +13,17 @@ namespace DotsAndBoxes.ViewModels;
 [Route(Routes.Game)]
 public class GameViewModel : BaseViewModel
 {
+    private readonly SignalRClient _signalRClient;
+
     private GameController _gameController;
 
     private readonly Brush _playerColor = Brushes.Red;
 
     private bool _canMakeMove = true;
 
-    public GameViewModel()
+    public GameViewModel(SignalRClient signalRClient)
     {
+        _signalRClient = signalRClient;
         _gameController = new GameController();
         _gameController.Initialize(420, 420);
 

@@ -22,12 +22,10 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (!result.IsSuccess)
         {
-            // CurrentViewModel.WriteToSnackBar(result.Message ?? "Произошла ошибка при навигации");
             return;
         }
 
         OnPropertyChanged(nameof(CurrentViewModel));
-        // GoBackCommand.NotifyCanExecuteChanged();
     }
 
     public void Dispose()

@@ -6,11 +6,15 @@ using Microsoft.Extensions.Logging;
 
 namespace DotsAndBoxes.SignalR;
 
-public sealed class SignalRServer : IAsyncDisposable
+public sealed class SignalRClient : IAsyncDisposable
 {
+    private HubConnectionState _connectionState = HubConnectionState.Disconnected;
+
+    private readonly CustomRetryPolicy _customRetryPolicy = new();
+
     private readonly HubConnection _hubConnection;
 
-    private readonly ILogger<SignalRServer> _logger;
+    private readonly ILogger<SignalRClient> _logger;
 
     #region StateEvents
 
@@ -18,9 +22,6 @@ public sealed class SignalRServer : IAsyncDisposable
     public Action<string> OnPlayerDisconnectAction { get; set; }
     public Action<Player> OnPlayerUpdateSettingsAction { get; set; }
     public Action<string, PlayerStatus> OnPlayerChangeStatusAction { get; set; }
-
-    public Action OnReconnectingAction { get; set; }
-    public Action OnReconnectedAction { get; set; }
 
     #endregion
 
@@ -33,7 +34,10 @@ public sealed class SignalRServer : IAsyncDisposable
 
     #endregion
 
-    public SignalRServer(ILogger<SignalRServer> logger)
+    public Action<HubConnectionState> OnConnectionStateChangedAction { get; set; }
+    public Action OnRetry { get; set; }
+
+    public SignalRClient(ILogger<SignalRClient> logger)
     {
         _logger = logger;
 
@@ -41,12 +45,14 @@ public sealed class SignalRServer : IAsyncDisposable
 
         _hubConnection = new HubConnectionBuilder()
             .WithUrl(hubAddress!)
-            .WithAutomaticReconnect([TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30)])
+            .WithAutomaticReconnect(_customRetryPolicy)
             .Build();
 
         _hubConnection.Closed += OnConnectionClosed;
         _hubConnection.Reconnecting += OnReconnecting;
         _hubConnection.Reconnected += OnReconnected;
+
+        _customRetryPolicy.OnRetry += Foo;
 
         SetupServerEventsListening();
     }
@@ -58,7 +64,8 @@ public sealed class SignalRServer : IAsyncDisposable
         try
         {
             await _hubConnection.StartAsync();
-            _logger.LogInformation("Hub connection started successfully.");
+            SetConnectionStateTo(HubConnectionState.Connected);
+            // _logger.LogInformation("Hub connection started successfully.");
         }
         catch (Exception ex)
         {
@@ -173,20 +180,29 @@ public sealed class SignalRServer : IAsyncDisposable
 
     private Task OnReconnecting(Exception exception)
     {
-        _logger.LogWarning("Attempting to reconnect...");
-        OnReconnectingAction?.Invoke();
+        SetConnectionStateTo(HubConnectionState.Reconnecting);
+        OnConnectionStateChangedAction?.Invoke(_connectionState);
+
         return Task.CompletedTask;
+    }
+
+    void Foo()
+    {
+        OnRetry?.Invoke();
     }
 
     private Task OnReconnected(string connectionId)
     {
-        _logger.LogInformation("Reconnected successfully. Connection ID: {connectionId}", connectionId);
-        OnReconnectedAction?.Invoke();
+        SetConnectionStateTo(HubConnectionState.Connected);
+        OnConnectionStateChangedAction?.Invoke(_connectionState);
+
         return Task.CompletedTask;
     }
 
     private Task OnConnectionClosed(Exception exception)
     {
+        SetConnectionStateTo(HubConnectionState.Disconnected);
+
         if (exception is not null)
         {
             _logger.LogError("Connection closed due to an error: {ex}", exception);
@@ -206,6 +222,17 @@ public sealed class SignalRServer : IAsyncDisposable
             _hubConnection.Closed -= OnConnectionClosed;
             await _hubConnection.StopAsync();
         }
+    }
+
+    private void SetConnectionStateTo(HubConnectionState newConnectionState)
+    {
+        if (_connectionState == newConnectionState)
+        {
+            return;
+        }
+
+        _connectionState = newConnectionState;
+        OnConnectionStateChangedAction?.Invoke(_connectionState);
     }
 
     #endregion

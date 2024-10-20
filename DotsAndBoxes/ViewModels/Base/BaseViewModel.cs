@@ -1,15 +1,14 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using DotsAndBoxes.Attributes;
 using DotsAndBoxes.Navigation;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace DotsAndBoxes.ViewModels;
 
-[ViewModelLifetime(ServiceLifetime.Transient)]
-public abstract partial class BaseViewModel : ObservableObject, INavigable, IDisposable
+public abstract partial class BaseViewModel : ObservableObject, INavigable
 {
     [ObservableProperty]
     private string _viewModelTitle;
+
+    public virtual bool DisposeOnNavigate => false;
 
     public virtual NavigationResult OnNavigatedTo(NavigationArgs args)
     {
@@ -19,10 +18,5 @@ public abstract partial class BaseViewModel : ObservableObject, INavigable, IDis
     public virtual Task<NavigationResult> OnNavigatedToAsync(NavigationArgs args)
     {
         return Task.FromResult(new NavigationResult { IsSuccess = true, NavigationArgs = args });
-    }
-
-    public virtual void Dispose()
-    {
-        // TODO release managed resources here
     }
 }

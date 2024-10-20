@@ -17,7 +17,7 @@ using MessageBox = DotsAndBoxesUIComponents.MessageBox;
 namespace DotsAndBoxes.ViewModels;
 
 [Route(Routes.Home)]
-public partial class HomeViewModel : BaseViewModel
+public sealed partial class HomeViewModel : BaseViewModel
 {
     #region Fields
 
@@ -43,7 +43,7 @@ public partial class HomeViewModel : BaseViewModel
 
     private readonly IGameAPI _gameAPI;
 
-    private readonly SignalRServer _signalRServer;
+    private readonly SignalRClient _signalRClient;
 
     private readonly ILogger<HomeViewModel> _logger;
 
@@ -52,7 +52,7 @@ public partial class HomeViewModel : BaseViewModel
     public HomeViewModel(ILogger<HomeViewModel> logger,
                          INavigationService<BaseViewModel> navigationService,
                          IGameAPI gameAPI,
-                         SignalRServer signalRServer)
+                         SignalRClient signalRClient)
     {
         ViewModelTitle = "Домашняя";
         SelectedGameTypeItem = GameTypes[0];
@@ -62,7 +62,7 @@ public partial class HomeViewModel : BaseViewModel
         _logger = logger;
         _navigationService = navigationService;
         _gameAPI = gameAPI;
-        _signalRServer = signalRServer;
+        _signalRClient = signalRClient;
     }
 
     #region Properties
@@ -141,7 +141,7 @@ public partial class HomeViewModel : BaseViewModel
                 return;
             }
 
-            await _signalRServer.StartConnectionAsync().ConfigureAwait(false);
+            await _signalRClient.StartConnectionAsync().ConfigureAwait(false);
 
             IsLoading = false;
 
@@ -151,7 +151,7 @@ public partial class HomeViewModel : BaseViewModel
                 Status = DoNotDisturb ? PlayerStatus.DoNotDisturb : PlayerStatus.FreeToPlay
             };
 
-            await _signalRServer.SendNewPlayerConnectAsync(newConnectedPlayer).ConfigureAwait(false);
+            await _signalRClient.SendNewPlayerConnectAsync(newConnectedPlayer).ConfigureAwait(false);
             await _navigationService.NavigateAsync(Routes.PlayersLobby,
                                                    new DynamicDictionary((nameof(FirstPlayerName), FirstPlayerName))).ConfigureAwait(false);
         }

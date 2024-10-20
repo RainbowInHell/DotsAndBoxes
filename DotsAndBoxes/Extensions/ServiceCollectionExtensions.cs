@@ -1,5 +1,4 @@
 ﻿using System.Reflection;
-using DotsAndBoxes.Attributes;
 using DotsAndBoxes.Navigation;
 using DotsAndBoxes.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,22 +15,12 @@ public static class ServiceCollectionExtensions
 
     public static void AddViewModels(this IServiceCollection services, Assembly assembly)
     {
-        var viewModels = assembly
-            .GetTypes()
-            .Where(x => !x.IsAbstract
-                        && x.IsSubclassOf(typeof(BaseViewModel))
-                        && x.IsDefined(typeof(ViewModelLifetimeAttribute), true)
-                        && GetViewModelLifetimeFromAttribute(x) == ServiceLifetime.Transient);
+        var viewModels = assembly.GetTypes()
+                                 .Where(x => !x.IsAbstract && x.IsSubclassOf(typeof(BaseViewModel)));
 
         foreach (var viewModel in viewModels)
         {
             services.AddTransient(viewModel);
         }
-    }
-
-    private static ServiceLifetime GetViewModelLifetimeFromAttribute(Type t)
-    {
-        var attribute = Attribute.GetCustomAttribute(t, typeof(ViewModelLifetimeAttribute))!;
-        return ((ViewModelLifetimeAttribute)attribute).Lifetime;
     }
 }

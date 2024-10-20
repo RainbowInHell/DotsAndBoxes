@@ -1,71 +1,35 @@
 ﻿namespace DotsAndBoxes.Navigation;
 
-public class NavigationService<T> : INavigationService<T> where T : class, INavigable
+public class NavigationService<T> : INavigationService<T>
+    where T : class, INavigable
 {
-    private readonly Stack<KeyValuePair<string, T>> _routeHistory;
+    private readonly IServiceProvider _serviceProvider;
 
-    // private readonly Dictionary<NavigationMethod, Action<Stack<KeyValuePair<string, T>>>>
-    //     _navigationMethodCallbacks = new()
-    //     {
-    //         { NavigationMethod.Pop, x => x.Pop() },
-    //         { NavigationMethod.Clear, x => x.Clear() },
-    //     };
+    private readonly RouteMap<T> _routeMap;
 
     public T CurrentNavigatedItem { get; private set; } = null!;
 
-    public bool CanGoBack => _routeHistory.Count != 1;
-
-    private readonly IServiceProvider _serviceProvider;
-    private readonly RouteMap<T> _routeMap;
+    public event Action<NavigationResult> OnNavigated;
 
     public NavigationService(IServiceProvider serviceProvider, RouteMap<T> routeMap)
     {
-        _routeHistory = new Stack<KeyValuePair<string, T>>();
         _serviceProvider = serviceProvider;
         _routeMap = routeMap;
     }
 
     public NavigationResult Navigate(string path, DynamicDictionary parameters = null)
     {
-        return NavigateInternal(path, NavigationMethod.Default, parameters);
+        return NavigateInternal(path, parameters);
     }
 
     public Task<NavigationResult> NavigateAsync(string path, DynamicDictionary parameters = null)
     {
-        return NavigateInternalAsync(path, NavigationMethod.Default, parameters);
+        return NavigateInternalAsync(path, parameters);
     }
 
-    public NavigationResult PopAndNavigate(string path, DynamicDictionary parameters = null)
+    private NavigationResult NavigateInternal(string path, DynamicDictionary parameters = null)
     {
-        return NavigateInternal(path, NavigationMethod.Pop, parameters);
-    }
-
-    public NavigationResult ClearAndNavigate(string path, DynamicDictionary parameters = null)
-    {
-        return NavigateInternal(path, NavigationMethod.Clear, parameters);
-    }
-
-    public void GoBack()
-    {
-        if (!CanGoBack)
-        {
-            return;
-        }
-
-        _routeHistory.Pop();
-        var viewModel = _routeHistory.Peek();
-        var args = new NavigationArgs { Destination = viewModel.Key, NavigationMode = NavigationMode.Back };
-
-        var result = viewModel.Value.OnNavigatedTo(args);
-        CurrentNavigatedItem = viewModel.Value;
-
-        OnNavigated?.Invoke(result);
-    }
-
-    // TODO: Dispose on navigate?
-    private NavigationResult NavigateInternal(string path, NavigationMethod method = NavigationMethod.Default, DynamicDictionary parameters = null)
-    {
-        var args = new NavigationArgs { Destination = path, Parameters = parameters ?? new DynamicDictionary() };
+        var args = new NavigationArgs { Destination = path, Parameters = parameters };
         if (!TryGetViewModelTypeByPath(path, out var viewModelType))
         {
             return BuildUnsuccessfulResult(args);
@@ -79,20 +43,21 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
         var result = viewModel.OnNavigatedTo(args);
         if (result.IsSuccess)
         {
-            // _navigationMethodCallbacks.TryGetValue(method, out var value);
-            // value?.Invoke(_routeHistory);
-            _routeHistory.Push(new KeyValuePair<string, T>(path, viewModel));
+            if (CurrentNavigatedItem is { DisposeOnNavigate: true } and IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
             CurrentNavigatedItem = viewModel;
         }
 
         OnNavigated?.Invoke(result);
-
         return result;
     }
 
-    private async Task<NavigationResult> NavigateInternalAsync(string path, NavigationMethod method = NavigationMethod.Default, DynamicDictionary parameters = null)
+    private async Task<NavigationResult> NavigateInternalAsync(string path, DynamicDictionary parameters = null)
     {
-        var args = new NavigationArgs { Destination = path, Parameters = parameters ?? new DynamicDictionary() };
+        var args = new NavigationArgs { Destination = path, Parameters = parameters };
         if (!TryGetViewModelTypeByPath(path, out var viewModelType))
         {
             return BuildUnsuccessfulResult(args);
@@ -106,14 +71,15 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
         var result = await viewModel.OnNavigatedToAsync(args).ConfigureAwait(false);
         if (result.IsSuccess)
         {
-            // _navigationMethodCallbacks.TryGetValue(method, out var value);
-            // value?.Invoke(_routeHistory);
-            _routeHistory.Push(new KeyValuePair<string, T>(path, viewModel));
+            if (CurrentNavigatedItem is { DisposeOnNavigate: true } and IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
             CurrentNavigatedItem = viewModel;
         }
 
         OnNavigated?.Invoke(result);
-
         return result;
     }
 
@@ -135,6 +101,4 @@ public class NavigationService<T> : INavigationService<T> where T : class, INavi
         OnNavigated?.Invoke(result);
         return result;
     }
-
-    public event Action<NavigationResult> OnNavigated;
 }

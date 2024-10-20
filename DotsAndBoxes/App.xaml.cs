@@ -7,7 +7,6 @@ using DotsAndBoxes.ViewModels;
 using DotsAndBoxes.Views;
 using DotsAndBoxesServerAPI.Refit;
 using Microsoft.Extensions.DependencyInjection;
-using NReco.Logging.File;
 using Refit;
 
 namespace DotsAndBoxes;
@@ -21,12 +20,7 @@ public partial class App
 
     protected override void OnStartup(StartupEventArgs args)
     {
-        // AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) =>
-                                                          // {
-                                                              // _ = new CustomMessageBox("Необработанное исключение.", MessageType.Error, MessageButtons.Ok).ShowDialog();
-                                                              // Application.OnThreadException(exception);
-                                                              // TODO: Logging
-                                                          // };
+        base.OnStartup(args);
 
         var serviceCollection = new ServiceCollection();
         ConfigureServices(serviceCollection);
@@ -37,26 +31,13 @@ public partial class App
 
     protected override void OnExit(ExitEventArgs e)
     {
-        Task.Run(async () =>
-                     {
-                         // This will dispose all registered IDisposables.
-                         await _serviceProvider.DisposeAsync().ConfigureAwait(false);
-                     }).SafeFireAndForget(onException: ex => Console.WriteLine(ex.Message));
-
         base.OnExit(e);
+
+        _serviceProvider.DisposeAsync().SafeFireAndForget(onException: ex => Console.WriteLine(ex.Message));
     }
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        // services.AddLogging(loggingBuilder =>
-        //                         {
-        //                             loggingBuilder.AddFile("Logs/DotsAndBoxesUI_{0:yyyy}-{0:MM}-{0:dd}.log",
-        //                                                    fileLoggerOpts =>
-        //                                                        {
-        //                                                            fileLoggerOpts.FormatLogFileName = fName => string.Format(fName, DateTime.UtcNow);
-        //                                                        });
-        //                         });
-
         var serverAddress = ConfigurationManager.AppSettings["ServerAddress"];
         services.AddRefitClient<IGameAPI>().ConfigureHttpClient(c =>
                                                                     {
@@ -65,8 +46,11 @@ public partial class App
         services.AddViewModels(typeof(BaseViewModel).Assembly);
         services.AddNavigation<BaseViewModel>();
 
-        services.AddSingleton<SignalRServer>();
+        services.AddSingleton<SignalRClient>();
         services.AddSingleton<MainViewModel>();
-        services.AddSingleton(typeof(MainWindow));
+        services.AddSingleton(serviceProvider => new MainWindow
+        {
+            DataContext = serviceProvider.GetRequiredService<MainViewModel>()
+        });
     }
 }

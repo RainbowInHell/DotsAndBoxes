@@ -2,16 +2,27 @@
 
 namespace DotsAndBoxes;
 
-public class RetryPolicy : IRetryPolicy
+public class CustomRetryPolicy : IRetryPolicy
 {
+    public Action OnRetry { get; set; }
+
     public TimeSpan? NextRetryDelay(RetryContext retryContext)
     {
-        return retryContext.PreviousRetryCount switch
+        switch (retryContext.PreviousRetryCount)
         {
-            0 => TimeSpan.FromSeconds(1),
-            1 => TimeSpan.FromSeconds(2),
-            2 => TimeSpan.FromSeconds(5),
-            _ => TimeSpan.FromSeconds(10)
-        };
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            case 4:
+            {
+                OnRetry?.Invoke();
+                return TimeSpan.FromSeconds(2);
+            }
+            default:
+            {
+                return null;
+            }
+        }
     }
 }

@@ -9,11 +9,12 @@ using DotsAndBoxes.SignalR;
 using DotsAndBoxesServerAPI.Models;
 using DotsAndBoxesServerAPI.Refit;
 using DotsAndBoxesUIComponents;
+using Microsoft.AspNetCore.SignalR.Client;
 
 namespace DotsAndBoxes.ViewModels;
 
 [Route(Routes.PlayersLobby)]
-public sealed partial class PlayersLobbyViewModel : BaseViewModel
+public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 {
     #region Fields
 
@@ -47,11 +48,11 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
 
     private readonly IGameAPI _gameAPI;
 
-    private readonly SignalRServer _signalRServer;
+    private readonly SignalRClient _signalRClient;
 
     #endregion
 
-    public PlayersLobbyViewModel(INavigationService<BaseViewModel> navigationService, IGameAPI gameAPI, SignalRServer signalRServer)
+    public PlayersLobbyViewModel(INavigationService<BaseViewModel> navigationService, IGameAPI gameAPI, SignalRClient signalRClient)
     {
         ViewModelTitle = "Игровое лобби";
 
@@ -62,36 +63,46 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
 
         _navigationService = navigationService;
         _gameAPI = gameAPI;
-        _signalRServer = signalRServer;
+        _signalRClient = signalRClient;
 
-        _signalRServer.OnPlayerConnectAction += OnPlayerConnect;
-        _signalRServer.OnPlayerDisconnectAction += OnPlayerDisconnect;
-        _signalRServer.OnPlayerUpdateSettingsAction += OnPlayerUpdateSettings;
-        _signalRServer.OnPlayerChangeStatusAction += OnPlayerChangeStatus;
+        _signalRClient.OnPlayerConnectAction += OnPlayerConnect;
+        _signalRClient.OnPlayerDisconnectAction += OnPlayerDisconnect;
+        _signalRClient.OnPlayerUpdateSettingsAction += OnPlayerUpdateSettings;
+        _signalRClient.OnPlayerChangeStatusAction += OnPlayerChangeStatus;
 
-        _signalRServer.OnChallengeAction += OnChallenge;
-        _signalRServer.OnChallengeCancelAction += OnChallengeCancel;
-        _signalRServer.OnChallengeRejectAction += OnChallengeReject;
-        _signalRServer.OnChallengeAcceptAction += OnChallengeAccept;
+        _signalRClient.OnChallengeAction += OnChallenge;
+        _signalRClient.OnChallengeCancelAction += OnChallengeCancel;
+        _signalRClient.OnChallengeRejectAction += OnChallengeReject;
+        _signalRClient.OnChallengeAcceptAction += OnChallengeAccept;
 
-        _signalRServer.OnReconnectingAction += OnReconnecting;
-        _signalRServer.OnReconnectedAction += OnReconnected;
+        _signalRClient.OnConnectionStateChangedAction += OnServerConnectionStateChanged;
+        _signalRClient.OnRetry += OnRetry;
     }
 
-    private void OnReconnected()
+    [ObservableProperty]
+    private uint _reconnectAttemptsCount;
+
+    private void OnRetry()
     {
-        ConnectionLost = false;
+        ++ReconnectAttemptsCount;
     }
 
     [ObservableProperty]
     private bool _connectionLost;
 
-    private void OnReconnecting()
+    private void OnServerConnectionStateChanged(HubConnectionState newConnectionState)
     {
-        ConnectionLost = true;
+        ConnectionLost = newConnectionState switch
+        {
+            HubConnectionState.Reconnecting => true,
+            HubConnectionState.Connected => false,
+            _ => ConnectionLost
+        };
     }
 
     #region Properties
+
+    public override bool DisposeOnNavigate => true;
 
     public string CurrentPlayerName { get; private set; }
 
@@ -282,11 +293,11 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
 
             if (challengedPlayer.WasChallenged)
             {
-                await _signalRServer.SendChallengeAsync(challengedPlayer.Name).ConfigureAwait(false);
+                await _signalRClient.SendChallengeAsync(challengedPlayer.Name).ConfigureAwait(false);
             }
             else
             {
-                await _signalRServer.UndoChallengeAsync(challengedPlayer.Name).ConfigureAwait(false);
+                await _signalRClient.UndoChallengeAsync(challengedPlayer.Name).ConfigureAwait(false);
             }
         }
         catch (Exception e)
@@ -319,7 +330,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
             SettingsUpdateStarted = true;
 
             await Task.Delay(1500).ConfigureAwait(false);
-            await _signalRServer.SendPlayerUpdateSettingsAsync(newSettings).ConfigureAwait(false);
+            await _signalRClient.SendPlayerUpdateSettingsAsync(newSettings).ConfigureAwait(false);
 
             SettingsUpdateStarted = false;
         }
@@ -338,11 +349,11 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
         try
         {
             ReceiveChallenge = false;
-            await _signalRServer.SendChallengeAnswerAsync(true, ChallengeSenderName).ConfigureAwait(false);
-            await _navigationService.NavigateAsync(Routes.Game, new DynamicDictionary((nameof(CurrentPlayerName), CurrentPlayerName),
-                                                                                      (nameof(ChallengeSenderName), ChallengeSenderName),
-                                                                                      (nameof(SelectedGridType), SelectedGridType),
-                                                                                      (nameof(SelectedGridSize), SelectedGridSize)));
+            await _signalRClient.SendChallengeAnswerAsync(true, ChallengeSenderName).ConfigureAwait(false);
+            _navigationService.Navigate(Routes.Game, new DynamicDictionary((nameof(CurrentPlayerName), CurrentPlayerName),
+                                                                           (nameof(ChallengeSenderName), ChallengeSenderName),
+                                                                           (nameof(SelectedGridType), SelectedGridType),
+                                                                           (nameof(SelectedGridSize), SelectedGridSize)));
         }
         catch (Exception e)
         {
@@ -356,7 +367,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
         try
         {
             ReceiveChallenge = false;
-            await _signalRServer.SendChallengeAnswerAsync(false, ChallengeSenderName).ConfigureAwait(false);
+            await _signalRClient.SendChallengeAnswerAsync(false, ChallengeSenderName).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -367,17 +378,20 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel
 
     #endregion
 
-    public override void Dispose()
+    public void Dispose()
     {
-        _signalRServer.OnPlayerConnectAction -= OnPlayerConnect;
-        _signalRServer.OnPlayerDisconnectAction -= OnPlayerDisconnect;
-        _signalRServer.OnPlayerUpdateSettingsAction -= OnPlayerUpdateSettings;
-        _signalRServer.OnPlayerChangeStatusAction -= OnPlayerChangeStatus;
+        _signalRClient.OnPlayerConnectAction -= OnPlayerConnect;
+        _signalRClient.OnPlayerDisconnectAction -= OnPlayerDisconnect;
+        _signalRClient.OnPlayerUpdateSettingsAction -= OnPlayerUpdateSettings;
+        _signalRClient.OnPlayerChangeStatusAction -= OnPlayerChangeStatus;
 
-        _signalRServer.OnChallengeAction -= OnChallenge;
-        _signalRServer.OnChallengeCancelAction -= OnChallengeCancel;
-        _signalRServer.OnChallengeRejectAction -= OnChallengeReject;
-        _signalRServer.OnChallengeAcceptAction -= OnChallengeAccept;
+        _signalRClient.OnChallengeAction -= OnChallenge;
+        _signalRClient.OnChallengeCancelAction -= OnChallengeCancel;
+        _signalRClient.OnChallengeRejectAction -= OnChallengeReject;
+        _signalRClient.OnChallengeAcceptAction -= OnChallengeAccept;
+
+        _signalRClient.OnConnectionStateChangedAction -= OnServerConnectionStateChanged;
+        _signalRClient.OnRetry -= OnRetry;
     }
 
     #endregion
