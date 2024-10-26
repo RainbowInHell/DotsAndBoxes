@@ -11,8 +11,6 @@ public sealed class SignalRClient : IAsyncDisposable
 {
     public const int MaxReconnectAttempts = 5;
 
-    private HubConnectionState _connectionState = HubConnectionState.Disconnected;
-
     private readonly IReadOnlyCollection<IDisposable> _eventSubscriptions;
 
     private readonly CustomRetryPolicy _customRetryPolicy = new();
@@ -21,13 +19,11 @@ public sealed class SignalRClient : IAsyncDisposable
 
     private readonly ILogger<SignalRClient> _logger;
 
-    #region StateEvents
+    #region PlayerEvents
 
     public event Action<Player> OnPlayerConnect;
-
     public event Action<string> OnPlayerDisconnect;
     public event Action<Player> OnPlayerUpdateSettings;
-
     public event Action<string, PlayerStatus> OnPlayerChangeStatus;
 
     #endregion
@@ -40,13 +36,25 @@ public sealed class SignalRClient : IAsyncDisposable
 
     public event Action OnChallengeReject;
 
-    public event Action<string> OnChallengeAccept;
+    public event Action OnChallengeAccept;
 
     #endregion
 
-    public event Action<HubConnectionState> OnConnectionStateChanged;
+    #region GameEvents
 
-    public event Action<long> ReconnectAttempt;
+    public event Func<int, int, int, int, Task> OnPlayerMakeMove;
+
+    #endregion
+
+    #region ConnectionEvents
+
+    public event Action OnConnectionLost;
+
+    public event Action OnConnectionRestored;
+
+    public event Action<long> OnReconnectAttempt;
+
+    #endregion
 
     public SignalRClient(ILogger<SignalRClient> logger)
     {
@@ -59,49 +67,19 @@ public sealed class SignalRClient : IAsyncDisposable
             .WithAutomaticReconnect(_customRetryPolicy)
             .Build();
 
-        _hubConnection.Closed += OnConnectionClosed;
         _hubConnection.Reconnecting += OnReconnecting;
         _hubConnection.Reconnected += OnReconnected;
+        _hubConnection.Closed += OnConnectionClosed;
 
         _customRetryPolicy.OnRetry += OnRetryPolicyAttempt;
         _eventSubscriptions = ConstructEventSubscriptions();
     }
 
     #region Methods
-    
-    public async Task StartConnectionAsync()
-    {
-        try
-        {
-            await _hubConnection.StartAsync();
-            SetConnectionStateTo(HubConnectionState.Connected);
-            // _logger.LogInformation("Hub connection started successfully.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Can't start connection due to an error: {ex}", ex);
-            throw;
-        }
-    }
-
-    public async Task StopConnectionAsync()
-    {
-        try
-        {
-            await _hubConnection.StopAsync();
-            SetConnectionStateTo(HubConnectionState.Connected);
-            // _logger.LogInformation("Hub connection stopped successfully.");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Can't start connection due to an error: {ex}", ex);
-            throw;
-        }
-    }
 
     #region ListenersSetup
 
-    private List<IDisposable> ConstructEventSubscriptions()
+    private IReadOnlyCollection<IDisposable> ConstructEventSubscriptions()
     {
         return
         [
@@ -130,14 +108,19 @@ public sealed class SignalRClient : IAsyncDisposable
                                                                                                                    OnChallengeReject?.Invoke();
                                                                                                                }),
 
-            _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeAccept),
-                                      challengedPlayerName => OnChallengeAccept?.Invoke(challengedPlayerName))
+            _hubConnection.On(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeAccept), () =>
+                                                                                                                {
+                                                                                                                    OnChallengeAccept?.Invoke();
+                                                                                                                }),
+
+            _hubConnection.On<int, int, int, int>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerMakeMove),
+                                      (x1, y1, x2, y2) => OnPlayerMakeMove?.Invoke(x1, y1, x2, y2))
         ];
     }
 
     #endregion
 
-    #region Senders
+    #region SenderMethods
 
     public async Task SendNewPlayerConnectAsync(Player player)
     {
@@ -204,38 +187,76 @@ public sealed class SignalRClient : IAsyncDisposable
         }
     }
 
+    public async Task MakeMoveAsync(int x1, int y1, int x2, int y2)
+    {
+        try
+        {
+            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerMakeMove), x1, y1, x2, y2);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Can't make move due to an error: {ex}", ex);
+            throw;
+        }
+    }
+
+    public async Task EndGameAsync()
+    {
+        try
+        {
+            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerEndGame));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Can't end game due to an error: {ex}", ex);
+            throw;
+        }
+    }
+
     #endregion
+
+    #region ConnectionMethods
+
+    public async Task StartConnectionAsync()
+    {
+        try
+        {
+            await _hubConnection.StartAsync();
+            // _logger.LogInformation("Hub connection started successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Can't start connection due to an error: {ex}", ex);
+            throw;
+        }
+    }
 
     private Task OnReconnecting(Exception exception)
     {
-        SetConnectionStateTo(HubConnectionState.Reconnecting);
-        OnConnectionStateChanged?.Invoke(_connectionState);
+        _logger.LogError("OnReconnecting exception: {exception}", exception);
 
+        OnConnectionLost?.Invoke();
         return Task.CompletedTask;
     }
 
     private void OnRetryPolicyAttempt(long attemptNumber)
     {
-        ReconnectAttempt?.Invoke(attemptNumber);
+        OnReconnectAttempt?.Invoke(attemptNumber);
 
         if (attemptNumber == MaxReconnectAttempts)
         {
-            _hubConnection.StopAsync().SafeFireAndForget();
+            _hubConnection.StopAsync().SafeFireAndForget(onException: ex => _logger.LogError("Foo Failed to reconnect after {attempts} attempts due to an error: {ex}.", MaxReconnectAttempts, ex));
         }
     }
 
     private Task OnReconnected(string connectionId)
     {
-        SetConnectionStateTo(HubConnectionState.Connected);
-        OnConnectionStateChanged?.Invoke(_connectionState);
-
+        OnConnectionRestored?.Invoke();
         return Task.CompletedTask;
     }
 
     private Task OnConnectionClosed(Exception exception)
     {
-        SetConnectionStateTo(HubConnectionState.Disconnected);
-
         if (exception is not null)
         {
             _logger.LogError("Connection closed due to an error: {ex}", exception);
@@ -248,6 +269,8 @@ public sealed class SignalRClient : IAsyncDisposable
         return Task.CompletedTask;
     }
 
+    #endregion
+
     public async ValueTask DisposeAsync()
     {
         foreach (var subscription in _eventSubscriptions)
@@ -258,17 +281,6 @@ public sealed class SignalRClient : IAsyncDisposable
         _customRetryPolicy.OnRetry -= OnRetryPolicyAttempt;
         _hubConnection.Closed -= OnConnectionClosed;
         await _hubConnection.DisposeAsync();
-    }
-
-    private void SetConnectionStateTo(HubConnectionState newConnectionState)
-    {
-        if (_connectionState == newConnectionState)
-        {
-            return;
-        }
-
-        _connectionState = newConnectionState;
-        OnConnectionStateChanged?.Invoke(_connectionState);
     }
 
     #endregion

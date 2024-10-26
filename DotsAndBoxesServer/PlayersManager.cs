@@ -1,13 +1,13 @@
 ﻿using System.Collections.Concurrent;
 using DotsAndBoxesServerAPI.Models;
 
-namespace DotsAndBoxesServer.GameLogic;
+namespace DotsAndBoxesServer;
 
 public class PlayersManager
 {
     private readonly ConcurrentDictionary<string, Player> _connectionIdToPlayer = new();
 
-    private readonly ConcurrentDictionary<string, GameGroup> _groups = new();
+    private readonly ConcurrentDictionary<string, string> _playerToOpponent = new();
 
     public void AddPlayer(string connectionId, Player player)
     {
@@ -24,20 +24,12 @@ public class PlayersManager
             throw new KeyNotFoundException($"Player with connection id '{connectionId}' not found");
         }
 
-        // If disconnected player was group host - delete this group.
-        _groups.TryRemove(connectionId, out _);
-
         return disconnectedPlayer;
     }
 
     public IEnumerable<Player> GetConnectedPlayers()
     {
         return _connectionIdToPlayer.Values;
-    }
-
-    public IEnumerable<Player> GetConnectedPlayers(string ignoredConnectionId)
-    { 
-        return _connectionIdToPlayer.Where(kvp => kvp.Key != ignoredConnectionId).Select(kvp => kvp.Value);
     }
 
     public Player GetConnectedPlayer(string connectionId)
@@ -65,27 +57,27 @@ public class PlayersManager
         return playerToUpdate;
     }
 
-    public GameGroup CreateGroup(string hostConnectionId)
+    public void MapOpponents(string firstPlayerConnectionId, string secondPlayerConnectionId)
     {
-        var newGroup = new GameGroup();
-        newGroup.AddPlayer(GetConnectedPlayer(hostConnectionId));
-        _groups.TryAdd(hostConnectionId, newGroup);
-        return newGroup;
+        _playerToOpponent[firstPlayerConnectionId] = secondPlayerConnectionId;
+        _playerToOpponent[secondPlayerConnectionId] = firstPlayerConnectionId;
     }
 
-    public void AddToGroup(string hostConnectionId, string secondPlayerConnectionId)
+    public string GetOpponentConnectionId(string connectionId)
     {
-        var existedGroup = _groups[hostConnectionId];
-        existedGroup.AddPlayer(GetConnectedPlayer(secondPlayerConnectionId));
-    }
-
-    public GameGroup DeleteGroup(string hostConnectionId)
-    {
-        if (_groups.TryRemove(hostConnectionId, out var deletedGroup))
+        if (!_playerToOpponent.TryGetValue(connectionId, out var opponentConnectionId))
         {
-            return deletedGroup;
+            throw new KeyNotFoundException($"Opponent for '{connectionId}' connection id not found");
         }
 
-        throw new KeyNotFoundException($"Group with host player connection id '{hostConnectionId}' not found");
+        return opponentConnectionId;
+    }
+
+    public void RemoveOpponent(string connectionId)
+    {
+        if (!_playerToOpponent.TryRemove(connectionId, out _))
+        {
+            throw new KeyNotFoundException($"Opponent for '{connectionId}' connection id not found");
+        }
     }
 }

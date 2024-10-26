@@ -1,39 +1,42 @@
-﻿using System.Drawing;
-using System.Windows.Media;
-using DotsAndBoxesUIComponents;
+﻿using DotsAndBoxesUIComponents;
 
 namespace DotsAndBoxes;
 
-public class GameController : StateChecker
+public class GameController
 {
-    private const int EllipseSize = 10;
+    const int n = 1;
 
-    private const int DefaultWidthHeight = 420;
+    private int _completedBoxesTracker;
 
-    private int NumberOfRows { get; }
+    private const int DefaultEllipseSize = 10;
 
-    private int NumberOfColumns { get; }
+    private const int DefaultWidthHeight = 400;
 
-    public IReadOnlyList<Point> PointList { get; }
+    private readonly int _distanceBetweenPoints;
 
-    public IReadOnlyList<LineStructure> LineList { get; }
+    private readonly SquareCompletionChecker _squareCompletionChecker;
+
+    public IReadOnlyList<DrawablePoint> PointList { get; }
+
+    public IReadOnlyList<DrawableLine> LineList { get; }
 
     public GameController()
     {
-        GameHeight = GameWidth = DefaultWidthHeight / 4;
-        NumberOfColumns = NumberOfRows = 4;
+        _distanceBetweenPoints = DefaultWidthHeight / n;
 
-        PointList = CreatePointList();
-        LineList = CreateLineList();
+        PointList = CreatePointList(n, n);
+        LineList = CreateLineList(n, n);
+
+        _squareCompletionChecker = new SquareCompletionChecker(LineList, n, _distanceBetweenPoints);
     }
 
-    private IReadOnlyList<Point> CreatePointList()
+    private List<DrawablePoint> CreatePointList(int numberOfRows, int numberOfColumns)
     {
-        var pointList = new List<Point>();
+        var pointList = new List<DrawablePoint>();
 
-        for (var i = 0; i <= NumberOfRows; ++i)
+        for (var i = 0; i <= numberOfRows; ++i)
         {
-            for (var j = 0; j <= NumberOfColumns; ++j)
+            for (var j = 0; j <= numberOfColumns; ++j)
             {
                 pointList.Add(CreatePoint(j, i));
             }
@@ -42,21 +45,21 @@ public class GameController : StateChecker
         return pointList;
     }
 
-    private IReadOnlyList<LineStructure> CreateLineList()
+    private List<DrawableLine> CreateLineList(int numberOfRows, int numberOfColumns)
     {
-        var lineList = new List<LineStructure>();
+        var lineList = new List<DrawableLine>();
 
-        for (var i = 0; i <= NumberOfRows; ++i)
+        for (var i = 0; i <= numberOfRows; ++i)
         {
-            for (var j = 0; j < NumberOfColumns; ++j)
+            for (var j = 0; j < numberOfColumns; ++j)
             {
                 lineList.Add(CreateHorizontalLine(j, i));
             }
         }
 
-        for (var i = 0; i < NumberOfRows; ++i)
+        for (var i = 0; i < numberOfRows; ++i)
         {
-            for (var j = 0; j <= NumberOfColumns; ++j)
+            for (var j = 0; j <= numberOfColumns; ++j)
             {
                 lineList.Add(CreateVerticalLine(j, i));
             }
@@ -65,51 +68,61 @@ public class GameController : StateChecker
         return lineList;
     }
 
-    private LineStructure CreateHorizontalLine(int positionX, int positionY)
+    private DrawableLine CreateHorizontalLine(int positionX, int positionY)
     {
-        var x1 = positionX * GameWidth;
-        var y1 = positionY * GameHeight;
+        var x1 = positionX * _distanceBetweenPoints;
+        var y1 = positionY * _distanceBetweenPoints;
 
-        var x2 = x1 + GameWidth;
+        var x2 = x1 + _distanceBetweenPoints;
         var y2 = y1;
 
-        var line = new LineStructure
+        var line = new DrawableLine
         {
-            X1 = x1,
-            Y1 = y1,
-            X2 = x2,
-            Y2 = y2,
-            Color = Brushes.Transparent
+            StartPoint = new DrawablePoint { X = x1, Y = y1 },
+            EndPoint = new DrawablePoint { X = x2, Y = y2 }
         };
 
+        Console.WriteLine($"Created horizontal line ({x1}, {y1}) -> ({x2}, {y2})");
         return line;
     }
 
-    private LineStructure CreateVerticalLine(int positionX, int positionY)
+    private DrawableLine CreateVerticalLine(int positionX, int positionY)
     {
-        var x1 = positionX * GameWidth;
-        var y1 = positionY * GameHeight;
+        var x1 = positionX * _distanceBetweenPoints;
+        var y1 = positionY * _distanceBetweenPoints;
 
         var x2 = x1;
-        var y2 = y1 + GameHeight;
+        var y2 = y1 + _distanceBetweenPoints;
 
-        var line = new LineStructure
+        var line = new DrawableLine
         {
-            X1 = x1,
-            Y1 = y1,
-            X2 = x2,
-            Y2 = y2,
-            Color = Brushes.Transparent
+            StartPoint = new DrawablePoint { X = x1, Y = y1 },
+            EndPoint = new DrawablePoint { X = x2, Y = y2 }
         };
 
+        Console.WriteLine($"Created vertical line ({x1}, {y1}) -> ({x2}, {y2})");
         return line;
     }
 
-    private Point CreatePoint(int positionX, int positionY)
+    private DrawablePoint CreatePoint(int positionX, int positionY)
     {
-        var x = positionX * GameWidth - EllipseSize / 2;
-        var y = positionY * GameHeight - EllipseSize / 2;
+        var x = positionX * _distanceBetweenPoints - DefaultEllipseSize / 2;
+        var y = positionY * _distanceBetweenPoints - DefaultEllipseSize / 2;
 
-        return new Point(x, y);
+        return new DrawablePoint { X = x, Y = y };
     }
+
+    public bool IsSquareCompleted(DrawableLine drawable)
+    {
+        var isSquareCompleted = _squareCompletionChecker.IsSquareCompleted(drawable);
+        if (isSquareCompleted)
+        {
+            _completedBoxesTracker++;
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool IsGameEnded() => _completedBoxesTracker == n * n;
 }

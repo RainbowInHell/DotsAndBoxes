@@ -14,12 +14,11 @@ public static class HubEventActions
             { HubEventActionType.OnPlayerChangeStatus, HubEventActionType.OnPlayerChangeStatus.ToString() },
 
             { HubEventActionType.OnChallenge, HubEventActionType.OnChallenge.ToString() },
-
             { HubEventActionType.OnChallengeCancel, HubEventActionType.OnChallengeCancel.ToString() },
-
             { HubEventActionType.OnChallengeReject, HubEventActionType.OnChallengeReject.ToString() },
+            { HubEventActionType.OnChallengeAccept, HubEventActionType.OnChallengeAccept.ToString() },
 
-            { HubEventActionType.OnChallengeAccept, HubEventActionType.OnChallengeAccept.ToString() }
+            { HubEventActionType.OnPlayerMakeMove, HubEventActionType.OnPlayerMakeMove.ToString() }
         };
     }
 

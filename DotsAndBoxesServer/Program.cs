@@ -1,7 +1,6 @@
-using DotsAndBoxesServer.GameLogic;
+using DotsAndBoxesServer;
 using DotsAndBoxesServer.HubFilters;
 using DotsAndBoxesServer.Hubs;
-using DotsAndBoxesServerAPI.Models;
 using Microsoft.AspNetCore.SignalR;
 using NReco.Logging.File;
 

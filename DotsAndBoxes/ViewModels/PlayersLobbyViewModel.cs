@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
+using AsyncAwaitBestPractices;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DotsAndBoxes.Attributes;
@@ -9,7 +10,6 @@ using DotsAndBoxes.SignalR;
 using DotsAndBoxesServerAPI.Models;
 using DotsAndBoxesServerAPI.Refit;
 using DotsAndBoxesUIComponents;
-using Microsoft.AspNetCore.SignalR.Client;
 
 namespace DotsAndBoxes.ViewModels;
 
@@ -18,11 +18,14 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 {
     #region Fields
 
-    private GridToPlayType _selectedGridType = GridToPlayType.Default;
-
     private SettingsHolder _currentSettings;
 
+    private string _lastChallengedPlayer;
+
     #region FieldsWithObservableProperties
+
+    [ObservableProperty]
+    private GridToPlayType _selectedGridType = GridToPlayType.Default;
 
     [ObservableProperty]
     private GridToPlaySize _selectedGridSize = GridToPlaySize.ThreeToThree;
@@ -38,9 +41,6 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
     [ObservableProperty]
     private string _challengeSenderName;
-
-    [ObservableProperty]
-    private string _challengeMessage;
 
     [ObservableProperty]
     private bool _connectionIsLost;
@@ -81,67 +81,20 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         _signalRClient.OnChallengeReject += OnChallengeReject;
         _signalRClient.OnChallengeAccept += OnChallengeAccept;
 
-        _signalRClient.OnConnectionStateChanged += OnServerConnectionStateChanged;
-        _signalRClient.ReconnectAttempt += OnReconnect;
-    }
-
-    private void OnReconnect(long attemptsCount)
-    {
-        if (attemptsCount != SignalRClient.MaxReconnectAttempts)
-        {
-            ReconnectAttemptsCount++;
-            return;
-        }
-
-        ConnectionIsLost = false;
-        DispatcherHelper.InvokeMethodInCorrectThread(() =>
-                                                         {
-                                                             MessageBox.Show("Не удалось восстановить подключение к серверу.\nТекущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Warning);
-                                                         });
-
-        _navigationService.Navigate(Routes.Home);
-    }
-
-    private void OnServerConnectionStateChanged(HubConnectionState newConnectionState)
-    {
-        ConnectionIsLost = newConnectionState switch
-        {
-            HubConnectionState.Connected => false,
-            _ => true
-        };
+        _signalRClient.OnConnectionLost += OnConnectionLost;
+        _signalRClient.OnReconnectAttempt += OnReconnectAttempt;
+        _signalRClient.OnConnectionRestored += OnConnectionRestored;
     }
 
     #region Properties
-
-    public override bool DisposeOnNavigate => true;
 
     public string CurrentPlayerName { get; private set; }
 
     public ObservableCollection<PlayerSelectableItem> Players { get; private set; } = [];
 
-    public ObservableCollection<GridToPlayType> GridTypes { get; } = [GridToPlayType.Default, GridToPlayType.Diamond];
+    public ObservableCollection<GridToPlayType> GridTypes { get; } = [GridToPlayType.Default];
 
     public ObservableCollection<GridToPlaySize> GridSizes { get; } = [GridToPlaySize.ThreeToThree, GridToPlaySize.FiveToFive, GridToPlaySize.SixToSix];
-
-    public GridToPlayType SelectedGridType
-    {
-        get => _selectedGridType;
-        set
-        {
-            if (_selectedGridType == value)
-            {
-                return;
-            }
-
-            _selectedGridType = value;
-            OnPropertyChanged();
-
-            SelectedGridSize = GridToPlaySize.ThreeToThree;
-    
-            GridSizes[2] = value is GridToPlayType.Default ? GridToPlaySize.SixToSix : GridToPlaySize.SevenToSeven;
-            OnPropertyChanged(nameof(GridSizes));
-        }
-    }
 
     #endregion
 
@@ -163,125 +116,15 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
     { 
         CurrentPlayerName = args.Parameters.GetValue<string>("FirstPlayerName");
 
-        await LoadConnectedPlayersAsync().ConfigureAwait(false);
-        return await base.OnNavigatedToAsync(args).ConfigureAwait(false);
-    }
-
-    private async Task LoadConnectedPlayersAsync()
-    {
         var connectedPlayers = await _gameAPI.GetConnectedPlayers().ConfigureAwait(false);
         await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
                                                                     {
                                                                         Players = new(connectedPlayers.Where(x => x.Name != CurrentPlayerName).Select(x => new PlayerSelectableItem(x)));
                                                                         OnPropertyChanged(nameof(Players));
                                                                     });
+
+        return await base.OnNavigatedToAsync(args).ConfigureAwait(false);
     }
-
-    #region ServerEventHandlers
-
-    #region StateEvents
-
-    private void OnPlayerConnect(Player player)
-    {
-        DispatcherHelper.InvokeMethodInCorrectThread(() =>
-                                                         {
-                                                             Players.Add(new PlayerSelectableItem(player));
-                                                             OnPropertyChanged(nameof(Players));
-                                                         });
-    }
-
-    private void OnPlayerDisconnect(string disconnectedPlayerName)
-    {
-        var disconnectedSelectablePlayer = Players.FirstOrDefault(x => x.Name == disconnectedPlayerName);
-        if (disconnectedSelectablePlayer is null)
-        {
-            return;
-        }
-
-        DispatcherHelper.InvokeMethodInCorrectThread(() =>
-                                                         {
-                                                             Players.Remove(disconnectedSelectablePlayer);
-                                                             OnPropertyChanged(nameof(Players));
-                                                         });
-    }
-
-    private void OnPlayerUpdateSettings(Player updatedPlayer)
-    {
-        var playerToUpdate = Players.FirstOrDefault(x => x.Name == updatedPlayer.Name);
-        if (playerToUpdate is null)
-        {
-            return;
-        }
-
-        playerToUpdate.Status = updatedPlayer.Status;
-        playerToUpdate.PreferredGridType = updatedPlayer.Settings.GridToPlayType;
-        playerToUpdate.PreferredGridSize = updatedPlayer.Settings.GridToPlaySize;
-    }
-
-    #endregion
-
-    /// <summary>
-    /// Occurs when current player receive challenge.
-    /// </summary>
-    /// <param name="challengeSenderName">Challenge sender name.</param>
-    private void OnChallenge(string challengeSenderName)
-    {
-        ReceiveChallenge = true;
-        ChallengeSenderName = challengeSenderName;
-        ChallengeMessage = $"Приглашение на совместную игру от {ChallengeSenderName}";
-    }
-
-    /// <summary>
-    /// Occurs when someone of the connected players was challenged.
-    /// </summary>
-    /// <param name="playerName">Player which status was changed.</param>
-    /// <param name="newStatus">New status.</param>
-    private void OnPlayerChangeStatus(string playerName, PlayerStatus newStatus)
-    {
-        var existedPlayer = Players.FirstOrDefault(x => x.Name == playerName);
-        if (existedPlayer is null)
-        {
-            return;
-        }
-
-        existedPlayer.Status = newStatus;
-    }
-
-    /// <summary>
-    /// Occurs when challenge sender for current player cancel the challenge.
-    /// </summary>
-    private void OnChallengeCancel()
-    {
-        ReceiveChallenge = false;
-        DispatcherHelper.InvokeMethodInCorrectThread(() =>
-                                                          {
-                                                              _ = MessageBox.Show($"Игрок {ChallengeSenderName} отменил приглашение.", MsgBoxButton.OK, MsgBoxImage.Information);
-                                                          });
-    }
-
-    private void OnChallengeReject()
-    {
-        var challengedPlayer = Players.First(x => x.WasChallenged);
-        challengedPlayer.WasChallenged = false;
-
-        DispatcherHelper.InvokeMethodInCorrectThread(() =>
-                                                         {
-                                                             _ = MessageBox.Show($"Игрок {challengedPlayer.Name} отклонил приглашение.", MsgBoxButton.OK, MsgBoxImage.Information);
-                                                         });
-    }
-
-    private void OnChallengeAccept(string challengedPlayerName)
-    {
-        ReceiveChallenge = false;
-
-        var a = challengedPlayerName;
-        var a1 = CurrentPlayerName;
-        var a2 = ChallengeSenderName;
-        _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayer", CurrentPlayerName),
-                                                                       ("SecondPlayer", challengedPlayerName)));
-    }
-
-    #endregion
 
     #region CommandMethods
 
@@ -300,10 +143,12 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
             if (challengedPlayer.WasChallenged)
             {
+                _lastChallengedPlayer = challengedPlayer.Name;
                 await _signalRClient.SendChallengeAsync(challengedPlayer.Name).ConfigureAwait(false);
             }
             else
             {
+                _lastChallengedPlayer = null;
                 await _signalRClient.UndoChallengeAsync(challengedPlayer.Name).ConfigureAwait(false);
             }
         }
@@ -355,10 +200,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
     {
         try
         {
-            ReceiveChallenge = false;
             await _signalRClient.SendChallengeAnswerAsync(true, ChallengeSenderName).ConfigureAwait(false);
-            _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayer", CurrentPlayerName),
-                                                                           ("SecondPlayer", ChallengeSenderName)));
         }
         catch (Exception e)
         {
@@ -383,6 +225,160 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
     #endregion
 
+    #region PlayerEventHandlers
+
+    private void OnPlayerConnect(Player player)
+    {
+        DispatcherHelper.InvokeMethodInCorrectThread(() =>
+                                                         {
+                                                             Players.Add(new PlayerSelectableItem(player));
+                                                             OnPropertyChanged(nameof(Players));
+                                                         });
+    }
+
+    private void OnPlayerDisconnect(string disconnectedPlayerName)
+    {
+        var disconnectedSelectablePlayer = Players.FirstOrDefault(x => x.Name == disconnectedPlayerName);
+        if (disconnectedSelectablePlayer is null)
+        {
+            return;
+        }
+
+        DispatcherHelper.InvokeMethodInCorrectThread(() =>
+                                                         {
+                                                             Players.Remove(disconnectedSelectablePlayer);
+                                                             OnPropertyChanged(nameof(Players));
+                                                         });
+    }
+
+    private void OnPlayerUpdateSettings(Player updatedPlayer)
+    {
+        var playerToUpdate = Players.FirstOrDefault(x => x.Name == updatedPlayer.Name);
+        if (playerToUpdate is null)
+        {
+            return;
+        }
+
+        playerToUpdate.Status = updatedPlayer.Status;
+        playerToUpdate.PreferredGridType = updatedPlayer.Settings.GridToPlayType;
+        playerToUpdate.PreferredGridSize = updatedPlayer.Settings.GridToPlaySize;
+    }
+
+    /// <summary>
+    /// Occurs when someone of the connected players was challenged.
+    /// </summary>
+    /// <param name="playerName">Player which status was changed.</param>
+    /// <param name="newStatus">New status.</param>
+    private void OnPlayerChangeStatus(string playerName, PlayerStatus newStatus)
+    {
+        var existedPlayer = Players.FirstOrDefault(x => x.Name == playerName);
+        if (existedPlayer is null)
+        {
+            return;
+        }
+
+        existedPlayer.Status = newStatus;
+    }
+
+    #endregion
+
+    #region ChallengeEventHandlers
+
+    /// <summary>
+    /// Occurs when current player receive challenge.
+    /// </summary>
+    /// <param name="challengeSenderName">Challenge sender name.</param>
+    private void OnChallenge(string challengeSenderName)
+    {
+        ReceiveChallenge = true;
+        ChallengeSenderName = challengeSenderName;
+    }
+
+    /// <summary>
+    /// Occurs when challenge sender for current player cancel the challenge.
+    /// </summary>
+    private void OnChallengeCancel()
+    {
+        ReceiveChallenge = false;
+        DispatcherHelper.InvokeMethodInCorrectThread(() =>
+                                                          {
+                                                              _ = MessageBox.Show($"Игрок {ChallengeSenderName} отменил приглашение.", MsgBoxButton.OK, MsgBoxImage.Information);
+                                                          });
+    }
+
+    private void OnChallengeReject()
+    {
+        var challengedPlayer = Players.First(x => x.WasChallenged);
+        challengedPlayer.WasChallenged = false;
+
+        _lastChallengedPlayer = challengedPlayer.Name;
+
+        DispatcherHelper.InvokeMethodInCorrectThread(() =>
+                                                         {
+                                                             _ = MessageBox.Show($"Игрок {challengedPlayer.Name} отклонил приглашение.", MsgBoxButton.OK, MsgBoxImage.Information);
+                                                         });
+    }
+
+    private void OnChallengeAccept()
+    {
+        if (ReceiveChallenge)
+        {
+            ReceiveChallenge = false;
+            _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayerName", CurrentPlayerName),
+                                                                           ("SecondPlayerName", ChallengeSenderName),
+                                                                           ("CanMakeMove", true)));
+        }
+        else
+        {
+            _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayerName", CurrentPlayerName),
+                                                                           ("SecondPlayerName", _lastChallengedPlayer),
+                                                                           ("CanMakeMove", false)));
+        }
+    }
+
+    #endregion
+
+    #region ConnectionEventHandlers
+
+    private void OnConnectionLost()
+    {
+        DispatcherHelper.InvokeMethodInCorrectThread(() =>
+                                                         {
+                                                             ConnectionIsLost = true;
+                                                             Players.Clear();
+                                                         });
+    }
+
+    private void OnReconnectAttempt(long attemptsCount)
+    {
+        if (attemptsCount != SignalRClient.MaxReconnectAttempts)
+        {
+            ReconnectAttemptsCount++;
+            return;
+        }
+
+        ConnectionIsLost = false;
+        DispatcherHelper.InvokeMethodInCorrectThread(() =>
+                                                         {
+                                                             MessageBox.Show("Не удалось восстановить подключение к серверу.\nТекущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Warning);
+                                                         });
+
+        _navigationService.Navigate(Routes.Home);
+    }
+
+    private void OnConnectionRestored()
+    {
+        var newConnectedPlayer = new Player
+        {
+            Name = CurrentPlayerName,
+            Status = DoNotDisturb ? PlayerStatus.DoNotDisturb : PlayerStatus.FreeToPlay
+        };
+
+        _signalRClient.SendNewPlayerConnectAsync(newConnectedPlayer).SafeFireAndForget();
+    }
+
+    #endregion
+
     public void Dispose()
     {
         _signalRClient.OnPlayerConnect -= OnPlayerConnect;
@@ -395,8 +391,9 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         _signalRClient.OnChallengeReject -= OnChallengeReject;
         _signalRClient.OnChallengeAccept -= OnChallengeAccept;
 
-        _signalRClient.OnConnectionStateChanged -= OnServerConnectionStateChanged;
-        _signalRClient.ReconnectAttempt -= OnReconnect;
+        _signalRClient.OnConnectionLost -= OnConnectionLost;
+        _signalRClient.OnReconnectAttempt -= OnReconnectAttempt;
+        _signalRClient.OnConnectionRestored -= OnConnectionRestored;
     }
 
     #endregion

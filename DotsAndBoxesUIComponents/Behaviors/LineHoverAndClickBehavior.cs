@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using Microsoft.Xaml.Behaviors;
@@ -7,14 +8,24 @@ namespace DotsAndBoxesUIComponents.Behaviors;
 
 public class LineHoverAndClickBehavior : Behavior<Line>
 {
-    private bool _isClicked;
+    public static readonly DependencyProperty CanClickProperty =
+        DependencyProperty.Register(
+            nameof(CanClick), 
+            typeof(bool), 
+            typeof(LineHoverAndClickBehavior), 
+            new PropertyMetadata(true));
+
+    public bool CanClick
+    {
+        get => (bool)GetValue(CanClickProperty);
+        set => SetValue(CanClickProperty, value);
+    }
 
     protected override void OnAttached()
     {
         base.OnAttached();
         AssociatedObject.MouseEnter += OnMouseEnter;
         AssociatedObject.MouseLeave += OnMouseLeave;
-        AssociatedObject.MouseLeftButtonDown += OnMouseLeftButtonDown;
     }
 
     protected override void OnDetaching()
@@ -22,12 +33,11 @@ public class LineHoverAndClickBehavior : Behavior<Line>
         base.OnDetaching();
         AssociatedObject.MouseEnter -= OnMouseEnter;
         AssociatedObject.MouseLeave -= OnMouseLeave;
-        AssociatedObject.MouseLeftButtonDown -= OnMouseLeftButtonDown;
     }
 
     private void OnMouseEnter(object sender, MouseEventArgs e)
     {
-        if (!_isClicked && AssociatedObject.DataContext is LineStructure lineStructure)
+        if (AssociatedObject.DataContext is DrawableLine { IsClicked: false } lineStructure)
         {
             lineStructure.Color = Brushes.Black;
         }
@@ -35,17 +45,9 @@ public class LineHoverAndClickBehavior : Behavior<Line>
 
     private void OnMouseLeave(object sender, MouseEventArgs e)
     {
-        if (AssociatedObject.DataContext is LineStructure lineStructure && !_isClicked)
+        if (AssociatedObject.DataContext is DrawableLine { IsClicked: false } lineStructure)
         {
             lineStructure.Color = Brushes.White;
-        }
-    }
-
-    private void OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (AssociatedObject.DataContext is LineStructure)
-        {
-            _isClicked = true;
         }
     }
 }

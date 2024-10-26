@@ -231,7 +231,7 @@
                 <TextBlock Grid.Row="0"
                            Margin="5,5,5,20"
                            FontSize="18"
-                           Text="{Binding ChallengeMessage}"
+                           Text="{Binding ChallengeSenderName, StringFormat=Приглашение на совместную игру от {0}}"
                            TextAlignment="Center"
                            TextWrapping="Wrap" />
                 <StackPanel Grid.Row="1"

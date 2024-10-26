@@ -11,5 +11,7 @@
         OnChallengeCancel,
         OnChallengeReject,
         OnChallengeAccept,
+
+        OnPlayerMakeMove
     }
 }

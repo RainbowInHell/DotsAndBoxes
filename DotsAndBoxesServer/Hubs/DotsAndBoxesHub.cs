@@ -1,5 +1,4 @@
-﻿using DotsAndBoxesServer.GameLogic;
-using DotsAndBoxesServerAPI.Models;
+﻿using DotsAndBoxesServerAPI.Models;
 using DotsAndBoxesServerAPI.SignalR;
 using Microsoft.AspNetCore.SignalR;
 
@@ -13,8 +12,6 @@ public class DotsAndBoxesHub : Hub
     {
         _playersManager = playersManager;
     }
-
-    #region StateEvents
 
     public override async Task OnDisconnectedAsync(Exception exception)
     {
@@ -42,24 +39,14 @@ public class DotsAndBoxesHub : Hub
                      .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerUpdateSettings), updatedPlayer);
     }
 
-    #endregion
-
     [HubMethodName(nameof(ServerMethodType.PlayerSendChallenge))]
     public async Task PlayerSendChallengeAsync(string toPlayerName)
     {
-        // Create a new group in which the player who sent the challenge is the host of the group.
-        var newGroup = _playersManager.CreateGroup(Context.ConnectionId);
-
-        await Groups.AddToGroupAsync(Context.ConnectionId, newGroup.Name);
-
-        // Get the connection id of the challenged player.
         var challengeReceiverConnectionId = _playersManager.GetConnectionId(toPlayerName);
         var challengeReceiverName = _playersManager.GetConnectedPlayer(challengeReceiverConnectionId).Name;
 
-        // Get the name of the player who sent the challenge.
         var challengeSenderName = _playersManager.GetConnectedPlayer(Context.ConnectionId).Name;
 
-        // Notify the challenged player with the name of the player who challenged him.
         await Clients.Client(challengeReceiverConnectionId)
             .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallenge), challengeSenderName);
 
@@ -70,20 +57,11 @@ public class DotsAndBoxesHub : Hub
     [HubMethodName(nameof(ServerMethodType.PlayerCancelChallenge))]
     public async Task PlayerCancelChallengeAsync(string challengedPlayerName)
     {
-        // Delete managed group, because no need to store object in the memory.
-        var deletedGroup = _playersManager.DeleteGroup(Context.ConnectionId);
-
-        // Delete server group.
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, deletedGroup.Name);
-
-        // Get the connection id of the challenged player.
         var challengedPlayerConnectionId = _playersManager.GetConnectionId(challengedPlayerName);
 
-        // Notify challenged player that the challenge sender has canceled his offer.
         await Clients.Client(challengedPlayerConnectionId)
                      .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeCancel));
 
-        // Notify all players that the challenged player now is free.
         await Clients.AllExcept(Context.ConnectionId, challengedPlayerConnectionId)
             .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), challengedPlayerName, PlayerStatus.FreeToPlay);
     }
@@ -91,32 +69,49 @@ public class DotsAndBoxesHub : Hub
     [HubMethodName(nameof(ServerMethodType.PlayerSendChallengeAnswer))]
     public async Task PlayerSendChallengeAnswerAsync(bool challengeAccepted, string challengeSenderName)
     {
-        var groupHostConnectionId = _playersManager.GetConnectionId(challengeSenderName);
+        var challengeSenderConnectionId = _playersManager.GetConnectionId(challengeSenderName);
+        var challengedPlayerConnectionId = Context.ConnectionId;
+
         var challengedPlayerName = _playersManager.GetConnectedPlayer(Context.ConnectionId).Name;
 
         // Challenge was accepted.
         if (challengeAccepted)
         {
-            _playersManager.AddToGroup(groupHostConnectionId, Context.ConnectionId);
+            _playersManager.MapOpponents(challengeSenderConnectionId, challengedPlayerConnectionId);
 
-            await Clients.Client(groupHostConnectionId)
-                         .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeAccept), challengedPlayerName);
+            await Clients.Clients(challengeSenderConnectionId, challengedPlayerConnectionId)
+                         .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeAccept));
 
-            await Clients.AllExcept(Context.ConnectionId, groupHostConnectionId)
+            await Clients.AllExcept(challengeSenderConnectionId, challengedPlayerConnectionId)
                          .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), challengedPlayerName, PlayerStatus.Playing);
+            await Clients.AllExcept(challengeSenderConnectionId, challengedPlayerConnectionId)
+                          .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), challengeSenderName, PlayerStatus.Playing);
         }
         // Challenge was rejected.
         else
         {
-            var deletedGroup = _playersManager.DeleteGroup(groupHostConnectionId);
-
-            await Groups.RemoveFromGroupAsync(groupHostConnectionId, deletedGroup.Name);
-
-            await Clients.Client(groupHostConnectionId)
+            await Clients.Client(challengeSenderConnectionId)
                          .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeReject));
 
-            await Clients.AllExcept(Context.ConnectionId, groupHostConnectionId)
+            await Clients.AllExcept(challengeSenderConnectionId, challengedPlayerConnectionId)
                          .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), challengedPlayerName, PlayerStatus.FreeToPlay);
         }
+    }
+
+    [HubMethodName(nameof(ServerMethodType.PlayerMakeMove))]
+    public async Task PlayerMakeMoveAsync(int x1, int y1, int x2, int y2)
+    {
+        var opponentConnectionId = _playersManager.GetOpponentConnectionId(Context.ConnectionId);
+        await Clients.Client(opponentConnectionId)
+                     .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerMakeMove), x1, y1, x2, y2);
+    }
+
+    [HubMethodName(nameof(ServerMethodType.PlayerEndGame))]
+    public async Task PlayerEndGameAsync()
+    {
+        var player = _playersManager.GetConnectedPlayer(Context.ConnectionId);
+
+        await Clients.AllExcept(Context.ConnectionId)
+            .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), player.Name, player.Status);
     }
 }

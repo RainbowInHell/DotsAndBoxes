@@ -14,12 +14,12 @@ public class GameState
     public int Length { get; set; }
 
     public List<RectangleStructure> PlacedRectangles { get; set; }
-    public List<LineStructure> LineList { get; set; }
+    public List<DrawableLine> LineList { get; set; }
 
     public GameState()
     {
         Scores = new int[2];
         PlacedRectangles = new List<RectangleStructure>();
-        LineList = new List<LineStructure>();
+        LineList = new List<DrawableLine>();
     }
 }

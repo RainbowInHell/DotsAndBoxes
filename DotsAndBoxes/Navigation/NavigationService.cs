@@ -1,11 +1,15 @@
-﻿namespace DotsAndBoxes.Navigation;
+﻿using Microsoft.Extensions.DependencyInjection;
+
+namespace DotsAndBoxes.Navigation;
 
 public class NavigationService<T> : INavigationService<T>
     where T : class, INavigable
 {
+    private readonly RouteMap<T> _routeMap;
+
     private readonly IServiceProvider _serviceProvider;
 
-    private readonly RouteMap<T> _routeMap;
+    private IServiceScope _currentScope;
 
     public T CurrentNavigatedItem { get; private set; } = null!;
 
@@ -35,7 +39,10 @@ public class NavigationService<T> : INavigationService<T>
             return BuildUnsuccessfulResult(args);
         }
 
-        if (_serviceProvider.GetService(viewModelType) is not T viewModel)
+        DisposeCurrentScope();
+        _currentScope = _serviceProvider.CreateScope();
+
+        if (_currentScope.ServiceProvider.GetService(viewModelType) is not T viewModel)
         {
             return BuildUnsuccessfulResult(args);
         }
@@ -43,11 +50,6 @@ public class NavigationService<T> : INavigationService<T>
         var result = viewModel.OnNavigatedTo(args);
         if (result.IsSuccess)
         {
-            if (CurrentNavigatedItem is { DisposeOnNavigate: true } and IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
-
             CurrentNavigatedItem = viewModel;
         }
 
@@ -63,7 +65,10 @@ public class NavigationService<T> : INavigationService<T>
             return BuildUnsuccessfulResult(args);
         }
 
-        if (_serviceProvider.GetService(viewModelType) is not T viewModel)
+        DisposeCurrentScope();
+        _currentScope = _serviceProvider.CreateScope();
+
+        if (_currentScope.ServiceProvider.GetService(viewModelType) is not T viewModel)
         {
             return BuildUnsuccessfulResult(args);
         }
@@ -71,11 +76,6 @@ public class NavigationService<T> : INavigationService<T>
         var result = await viewModel.OnNavigatedToAsync(args).ConfigureAwait(false);
         if (result.IsSuccess)
         {
-            if (CurrentNavigatedItem is { DisposeOnNavigate: true } and IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
-
             CurrentNavigatedItem = viewModel;
         }
 
@@ -100,5 +100,11 @@ public class NavigationService<T> : INavigationService<T>
         var result = new NavigationResult { IsSuccess = false, NavigationArgs = args, Message = message };
         OnNavigated?.Invoke(result);
         return result;
+    }
+
+    private void DisposeCurrentScope()
+    {
+        _currentScope?.Dispose();
+        _currentScope = null;
     }
 }

@@ -20,14 +20,15 @@
                 <materialDesign:Card UniformCornerRadius="6"
                                      Height="76"
                                      Width="83">
-                    <TextBlock HorizontalAlignment="Center"
+                    <TextBlock Text="{Binding CurrentPlayerScore, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                               HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                FontSize="70"
-                               Foreground="DarkBlue"
+                               Foreground="LawnGreen"
                                Height="100" />
                 </materialDesign:Card>
                 <materialDesign:Chip Margin="10"
-                                     Content="{Binding FirstPlayer}"
+                                     Content="{Binding FirstPlayerName}"
                                      Icon="1"
                                      Width="100" />
             </StackPanel>
@@ -35,7 +36,7 @@
             <materialDesign:Card Style="{StaticResource MaterialDesignOutlinedCard}"
                                  Margin="20"
                                  UniformCornerRadius="6">
-                <StackPanel Width="420" Height="420" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10,10,10,10">
+                <StackPanel Width="400" Height="400" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="10,10,10,10">
 
                     <!-- Lines -->
                     <ItemsControl ItemsSource="{Binding Lines}">
@@ -46,11 +47,11 @@
                         </ItemsControl.ItemsPanel>
         
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type DotsAndBoxesUIComponents:LineStructure}">
-                                <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}"
+                            <DataTemplate DataType="{x:Type DotsAndBoxesUIComponents:DrawableLine}">
+                                <Line X1="{Binding StartPoint.X}" Y1="{Binding StartPoint.Y}" X2="{Binding EndPoint.X}" Y2="{Binding EndPoint.Y}"
                                       Stroke="{Binding Color}" StrokeThickness="8">
                                     <i:Interaction.Behaviors>
-                                        <Behaviors:LineHoverAndClickBehavior/>
+                                        <Behaviors:LineHoverAndClickBehavior CanClick="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Page}}, Path=DataContext.CanMakeMove}"/>
                                     </i:Interaction.Behaviors>
                                     <i:Interaction.Triggers>
                                         <i:EventTrigger EventName="MouseLeftButtonDown">
@@ -91,13 +92,14 @@
                 <materialDesign:Card UniformCornerRadius="6"
                                      Height="76"
                                      Width="83">
-                    <TextBlock HorizontalAlignment="Center"
+                    <TextBlock Text="{Binding OpponentPlayerScore, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
+                               HorizontalAlignment="Center"
                                VerticalAlignment="Center"
                                FontSize="70"
-                               Foreground="DarkRed"
+                               Foreground="OrangeRed"
                                Height="100" />
                 </materialDesign:Card>
-                <materialDesign:Chip Content="{Binding SecondPlayer}"
+                <materialDesign:Chip Content="{Binding SecondPlayerName}"
                                      Icon="2"
                                      Width="100"
                                      Margin="10" />

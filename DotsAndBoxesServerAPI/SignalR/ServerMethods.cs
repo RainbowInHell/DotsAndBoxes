@@ -13,7 +13,9 @@ public static class ServerMethods
             { ServerMethodType.PlayerDisconnect, ServerMethodType.PlayerDisconnect.ToString() },
             { ServerMethodType.PlayerSendChallenge, ServerMethodType.PlayerSendChallenge.ToString() },
             { ServerMethodType.PlayerCancelChallenge, ServerMethodType.PlayerCancelChallenge.ToString() },
-            { ServerMethodType.PlayerSendChallengeAnswer, ServerMethodType.PlayerSendChallengeAnswer.ToString() }
+            { ServerMethodType.PlayerSendChallengeAnswer, ServerMethodType.PlayerSendChallengeAnswer.ToString() },
+            { ServerMethodType.PlayerMakeMove, ServerMethodType.PlayerMakeMove.ToString() },
+            { ServerMethodType.PlayerEndGame, ServerMethodType.PlayerEndGame.ToString() }
         };
     }
 

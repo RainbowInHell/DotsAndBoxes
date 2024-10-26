@@ -9,5 +9,8 @@
         PlayerSendChallenge,
         PlayerCancelChallenge,
         PlayerSendChallengeAnswer,
+
+        PlayerMakeMove,
+        PlayerEndGame
     }
 }
