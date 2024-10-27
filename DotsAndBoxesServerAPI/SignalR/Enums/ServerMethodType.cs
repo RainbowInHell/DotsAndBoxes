@@ -10,7 +10,8 @@
         PlayerCancelChallenge,
         PlayerSendChallengeAnswer,
 
-        PlayerMakeMove,
-        PlayerEndGame
+        OpponentMakeMove,
+        OpponentLeaveGame,
+        OpponentWinGame
     }
 }

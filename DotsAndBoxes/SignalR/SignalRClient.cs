@@ -42,7 +42,9 @@ public sealed class SignalRClient : IAsyncDisposable
 
     #region GameEvents
 
-    public event Func<int, int, int, int, Task> OnPlayerMakeMove;
+    public event Action<int, int, int, int> OnOpponentMakeMove;
+    public event Func<Task> OnOpponentWinGame;
+    public event Func<Task> OnOpponentLeaveGame;
 
     #endregion
 
@@ -113,8 +115,18 @@ public sealed class SignalRClient : IAsyncDisposable
                                                                                                                     OnChallengeAccept?.Invoke();
                                                                                                                 }),
 
-            _hubConnection.On<int, int, int, int>(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerMakeMove),
-                                      (x1, y1, x2, y2) => OnPlayerMakeMove?.Invoke(x1, y1, x2, y2))
+            _hubConnection.On<int, int, int, int>(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentMakeMove),
+                                      (x1, y1, x2, y2) => OnOpponentMakeMove?.Invoke(x1, y1, x2, y2)),
+
+            _hubConnection.On(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentWinGame), () =>
+                                                                                                                 {
+                                                                                                                     OnOpponentWinGame?.Invoke();
+                                                                                                                 }),
+
+            _hubConnection.On(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentLeaveGame), () =>
+                                                                                                              {
+                                                                                                                  OnOpponentLeaveGame?.Invoke();
+                                                                                                              })
         ];
     }
 
@@ -191,7 +203,7 @@ public sealed class SignalRClient : IAsyncDisposable
     {
         try
         {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerMakeMove), x1, y1, x2, y2);
+            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.OpponentMakeMove), x1, y1, x2, y2);
         }
         catch (Exception ex)
         {
@@ -200,11 +212,24 @@ public sealed class SignalRClient : IAsyncDisposable
         }
     }
 
+    public async Task LeaveGameAsync()
+    {
+        try
+        {
+            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.OpponentLeaveGame));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Can't leave game due to an error: {ex}", ex);
+            throw;
+        }
+    }
+
     public async Task EndGameAsync()
     {
         try
         {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerEndGame));
+            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.OpponentWinGame));
         }
         catch (Exception ex)
         {
@@ -231,12 +256,27 @@ public sealed class SignalRClient : IAsyncDisposable
         }
     }
 
-    private Task OnReconnecting(Exception exception)
+    public async Task StopConnectionAsync()
+    {
+        try
+        {
+            await _hubConnection.StopAsync();
+            // _logger.LogInformation("Hub connection started successfully.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("Can't stop connection due to an error: {ex}", ex);
+            throw;
+        }
+    }
+
+    private async Task OnReconnecting(Exception exception)
     {
         _logger.LogError("OnReconnecting exception: {exception}", exception);
+        // await _hubConnection.StopAsync().ConfigureAwait(false);
 
         OnConnectionLost?.Invoke();
-        return Task.CompletedTask;
+        // return Task.CompletedTask;
     }
 
     private void OnRetryPolicyAttempt(long attemptNumber)
@@ -245,7 +285,7 @@ public sealed class SignalRClient : IAsyncDisposable
 
         if (attemptNumber == MaxReconnectAttempts)
         {
-            _hubConnection.StopAsync().SafeFireAndForget(onException: ex => _logger.LogError("Foo Failed to reconnect after {attempts} attempts due to an error: {ex}.", MaxReconnectAttempts, ex));
+            _hubConnection.StopAsync().SafeFireAndForget(onException: ex => _logger.LogError("Failed to reconnect after {attempts} attempts due to an error: {ex}.", MaxReconnectAttempts, ex));
         }
     }
 

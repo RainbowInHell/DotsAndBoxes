@@ -16,7 +16,14 @@ public class DotsAndBoxesHub : Hub
     public override async Task OnDisconnectedAsync(Exception exception)
     {
         var disconnectedPlayer = _playersManager.RemovePlayer(Context.ConnectionId);
- 
+
+        var opponentConnectionId = _playersManager.GetOpponentConnectionId(Context.ConnectionId);
+        if (opponentConnectionId != null)
+        {
+            await Clients.Client(opponentConnectionId)
+                         .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentLeaveGame));
+        }
+
         await Clients.All.SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerDisconnect),
                                     disconnectedPlayer.Name);
     }
@@ -98,20 +105,32 @@ public class DotsAndBoxesHub : Hub
         }
     }
 
-    [HubMethodName(nameof(ServerMethodType.PlayerMakeMove))]
-    public async Task PlayerMakeMoveAsync(int x1, int y1, int x2, int y2)
+    [HubMethodName(nameof(ServerMethodType.OpponentMakeMove))]
+    public async Task OpponentMakeMoveAsync(int x1, int y1, int x2, int y2)
     {
         var opponentConnectionId = _playersManager.GetOpponentConnectionId(Context.ConnectionId);
         await Clients.Client(opponentConnectionId)
-                     .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerMakeMove), x1, y1, x2, y2);
+                     .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentMakeMove), x1, y1, x2, y2);
     }
 
-    [HubMethodName(nameof(ServerMethodType.PlayerEndGame))]
-    public async Task PlayerEndGameAsync()
+    [HubMethodName(nameof(ServerMethodType.OpponentLeaveGame))]
+    public async Task OnOpponentLeaveGameAsync()
     {
-        var player = _playersManager.GetConnectedPlayer(Context.ConnectionId);
+        var leavedPlayer = _playersManager.GetConnectedPlayer(Context.ConnectionId);
+        var opponentConnectionId = _playersManager.GetOpponentConnectionId(Context.ConnectionId);
 
+        await Clients.Client(opponentConnectionId)
+                     .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentLeaveGame));
         await Clients.AllExcept(Context.ConnectionId)
-            .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), player.Name, player.Status);
+                     .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), leavedPlayer.Name, leavedPlayer.Status);
+    }
+
+    [HubMethodName(nameof(ServerMethodType.OpponentWinGame))]
+    public async Task OpponentWinGameAsync()
+    {
+        var opponentConnectionId = _playersManager.GetOpponentConnectionId(Context.ConnectionId);
+
+        await Clients.Client(opponentConnectionId)
+                     .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentWinGame));
     }
 }

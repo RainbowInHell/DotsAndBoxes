@@ -18,7 +18,9 @@ public static class HubEventActions
             { HubEventActionType.OnChallengeReject, HubEventActionType.OnChallengeReject.ToString() },
             { HubEventActionType.OnChallengeAccept, HubEventActionType.OnChallengeAccept.ToString() },
 
-            { HubEventActionType.OnPlayerMakeMove, HubEventActionType.OnPlayerMakeMove.ToString() }
+            { HubEventActionType.OnOpponentMakeMove, HubEventActionType.OnOpponentMakeMove.ToString() },
+            { HubEventActionType.OnOpponentWinGame, HubEventActionType.OnOpponentWinGame.ToString() },
+            { HubEventActionType.OnOpponentLeaveGame, HubEventActionType.OnOpponentLeaveGame.ToString() }
         };
     }
 

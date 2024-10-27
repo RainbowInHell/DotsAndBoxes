@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.SignalR.Client;
 
-namespace DotsAndBoxes;
+namespace DotsAndBoxes.SignalR;
 
 public class CustomRetryPolicy : IRetryPolicy
 {

@@ -133,7 +133,6 @@ public sealed partial class HomeViewModel : BaseViewModel
             if (connectedPlayers.Any(x => x.Name.Equals(FirstPlayerName, StringComparison.OrdinalIgnoreCase)))
             {
                 IsLoading = false;
-                
                 await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
                                                                             {
                                                                                 _ = MessageBox.Show("Игрок с таким именем уже есть на сервере.", MsgBoxButton.OK, MsgBoxImage.Error);

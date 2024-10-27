@@ -106,27 +106,13 @@
             </StackPanel>
         </StackPanel>
 
-        <materialDesign:PopupBox Style="{StaticResource MaterialDesignMultiFloatingActionPopupBox}"
-                                 HorizontalAlignment="Center"
-                                 VerticalAlignment="Stretch"
-                                 Margin="0,0,0,20"
-                                 PlacementMode="TopAndAlignCentres">
-
-            <materialDesign:PopupBox.ToggleContent>
-                <materialDesign:PackIcon Kind="MoreHoriz" Width="40" Height="40" VerticalAlignment="Center"
-                                         HorizontalAlignment="Center" />
-            </materialDesign:PopupBox.ToggleContent>
-
-            <materialDesign:PopupBox.ToggleCheckedContent>
-                <materialDesign:PackIcon Kind="Close" Width="40" Height="40" VerticalAlignment="Center"
-                                         HorizontalAlignment="Center"/>
-            </materialDesign:PopupBox.ToggleCheckedContent>
-
-            <StackPanel>
-                <Button Content="1" />
-                <Button Content="2" />
-                <Button Content="3" />
-            </StackPanel>
-        </materialDesign:PopupBox>
+        <Button HorizontalAlignment="Center"
+                Command="{Binding LeaveGameCommand}"
+                VerticalAlignment="Stretch"
+                Margin="0,0,0,20"
+                Style="{StaticResource MaterialDesignFloatingActionMiniDarkButton}"
+                ToolTip="Покинуть игру">
+            <materialDesign:PackIcon Kind="ExitToApp" />
+        </Button>
     </StackPanel>
 </Page>
