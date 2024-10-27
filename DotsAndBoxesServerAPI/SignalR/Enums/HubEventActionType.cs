@@ -12,6 +12,8 @@
         OnChallengeReject,
         OnChallengeAccept,
 
-        OnPlayerMakeMove
+        OnOpponentMakeMove,
+        OnOpponentWinGame,
+        OnOpponentLeaveGame
     }
 }

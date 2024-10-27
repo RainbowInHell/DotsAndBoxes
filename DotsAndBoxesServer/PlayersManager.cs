@@ -65,12 +65,7 @@ public class PlayersManager
 
     public string GetOpponentConnectionId(string connectionId)
     {
-        if (!_playerToOpponent.TryGetValue(connectionId, out var opponentConnectionId))
-        {
-            throw new KeyNotFoundException($"Opponent for '{connectionId}' connection id not found");
-        }
-
-        return opponentConnectionId;
+        return _playerToOpponent.GetValueOrDefault(connectionId);
     }
 
     public void RemoveOpponent(string connectionId)

@@ -368,6 +368,8 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
     private void OnConnectionRestored()
     {
+        ConnectionIsLost = false;
+
         var newConnectedPlayer = new Player
         {
             Name = CurrentPlayerName,
