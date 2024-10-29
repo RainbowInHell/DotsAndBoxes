@@ -9,7 +9,7 @@ namespace DotsAndBoxes;
 public class GameController
 {
     // Constants that define the game settings.
-    private const int N = 10; // Represents the number of squares per row and per column (a 4x4 grid, meaning there are 4 squares in each direction).
+    private const int N = 2; // Represents the number of squares per row and per column (a 4x4 grid, meaning there are 4 squares in each direction).
     private const int DefaultEllipseSize = 10; // A default size used for drawing points (dots) on the UI.
     private const int DefaultWidthHeight = 400; // The total width and height of the game board in pixels.
 
@@ -160,12 +160,13 @@ public class GameController
 
     /// <summary>
     /// Handles what happens when a line is clicked, checking if it results in a completed square.
+    /// This method updates the game state and is used by real players and by the AI once a move is confirmed.
     /// </summary>
-    public bool IsSquareCompleted(DrawableLine drawable)
+    public int MakeMove(DrawableLine drawable)
     {
-        // Update the arrays (`linesX` or `linesY`) to mark this line as clicked.
+        // Update the arrays (`linesX` or `linesY`) to mark this line as clicked for real player moves or confirmed AI moves.
         UpdateLineArrays(drawable);
-        var isCompleted = false;
+        var completedSquaresCounter = 0;
 
         // Determine the grid coordinates of the line's start point.
         var x = drawable.StartPoint.X / _distanceBetweenPoints;
@@ -175,21 +176,18 @@ public class GameController
         // Horizontal lines can complete a square above or below them.
         if (IsHorizontalLine(drawable))
         {
-            if (y > 0 && IsSquareComplete(x, y - 1)) isCompleted = true; // Check the square above.
-            if (y < N && IsSquareComplete(x, y)) isCompleted = true; // Check the square below.
+            if (y > 0 && IsSquareComplete(x, y - 1)) completedSquaresCounter++; // Check the square above.
+            if (y < N && IsSquareComplete(x, y)) completedSquaresCounter++; // Check the square below.
         }
         else
         {
             // Vertical lines can complete a square to the left or right of them.
-            if (x > 0 && IsSquareComplete(x - 1, y)) isCompleted = true; // Check the square to the left.
-            if (x < N && IsSquareComplete(x, y)) isCompleted = true; // Check the square to the right.
+            if (x > 0 && IsSquareComplete(x - 1, y)) completedSquaresCounter++; // Check the square to the left.
+            if (x < N && IsSquareComplete(x, y)) completedSquaresCounter++; // Check the square to the right.
         }
 
-        // If a square was completed, increase the completed box counter.
-        if (isCompleted) _completedBoxesTracker++;
-
-        // Return whether a square was completed by this action.
-        return isCompleted;
+        _completedBoxesTracker += completedSquaresCounter;
+        return completedSquaresCounter;
     }
 
     /// <summary>
