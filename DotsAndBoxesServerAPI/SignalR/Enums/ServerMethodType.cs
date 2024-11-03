@@ -12,6 +12,6 @@
 
         OpponentMakeMove,
         OpponentLeaveGame,
-        OpponentWinGame
+        // OpponentWinGame
     }
 }

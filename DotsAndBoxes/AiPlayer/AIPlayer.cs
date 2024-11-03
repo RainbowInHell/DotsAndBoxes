@@ -1,12 +1,15 @@
 ﻿using System.Windows.Media;
-using DotsAndBoxesUIComponents;
+using DotsAndBoxesServerAPI;
+using DotsAndBoxesUIComponents.GridElements;
 
 namespace DotsAndBoxes;
 
 public class AiPlayer
 {
     private readonly GameController _gameController;
+
     private readonly Brush _aiColor;
+
     private readonly Random _random;
 
     public AiPlayer(GameController gameController, Brush aiColor)
@@ -28,7 +31,7 @@ public class AiPlayer
         }
 
         lineToClick.Color = _aiColor;
-        return _gameController.MakeMove(lineToClick);
+        return _gameController.MakeMove(lineToClick.StartPoint.X, lineToClick.StartPoint.Y, lineToClick.EndPoint.X, lineToClick.EndPoint.Y);
     }
 
     /// <summary>

@@ -7,8 +7,10 @@ using CommunityToolkit.Mvvm.Input;
 using DotsAndBoxes.Attributes;
 using DotsAndBoxes.Navigation;
 using DotsAndBoxes.SignalR;
+using DotsAndBoxesServerAPI;
 using DotsAndBoxesServerAPI.Models;
 using DotsAndBoxesUIComponents;
+using DotsAndBoxesUIComponents.GridElements;
 using MessageBox = DotsAndBoxesUIComponents.MessageBox;
 
 namespace DotsAndBoxes.ViewModels;
@@ -16,17 +18,25 @@ namespace DotsAndBoxes.ViewModels;
 [Route(Routes.Game)]
 public sealed partial class GameViewModel : BaseViewModel, IDisposable
 {
+    #region Fields
+
     private AiPlayer _aiPlayer;
 
     private bool _isAgainstAi;
 
-    private readonly SignalRClient _signalRClient;
+    private string _lobbyId;
 
     private GameController _gameController;
+
+    private readonly SignalRClient _signalRClient;
 
     private readonly Brush _firstPlayerColor = Brushes.LawnGreen;
 
     private readonly Brush _secondPlayerColor = Brushes.OrangeRed;
+
+    private readonly INavigationService<BaseViewModel> _navigationService;
+
+    #region FieldsWithObservableProperties
 
     [ObservableProperty]
     private bool _canMakeMove = true;
@@ -37,7 +47,9 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
     [ObservableProperty]
     private int _opponentPlayerScore;
 
-    private readonly INavigationService<BaseViewModel> _navigationService;
+    #endregion
+
+    #endregion
 
     public GameViewModel(SignalRClient signalRClient, INavigationService<BaseViewModel> navigationService)
     {
@@ -45,11 +57,6 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
         _signalRClient = signalRClient;
         _navigationService = navigationService;
-
-        _signalRClient.OnOpponentMakeMove += OnOpponentMakeMove;
-        _signalRClient.OnOpponentWinGame += OnOpponentWinGame;
-        _signalRClient.OnOpponentLeaveGame += OnOpponentLeaveGame;
-        _signalRClient.OnConnectionLost += OnConnectionLost;
 
         ClickLineCommand = new AsyncRelayCommand<DrawableLine>(ClickLineCommandExecuteAsync, ClickLineCommandCanExecute);
         LeaveGameCommand = new AsyncRelayCommand(LeaveGameCommandExecuteAsync);
@@ -79,19 +86,30 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     public override NavigationResult OnNavigatedTo(NavigationArgs args)
     {
+        var selectedGridSize = args.Parameters.GetValue<GridSize>("GridSize");
+        var pointsAndLinesTuple = BoardDrawer.DrawBoard(selectedGridSize);
+        Lines = new(pointsAndLinesTuple.lineList);
+        Dots = new(pointsAndLinesTuple.pointList);
+
         FirstPlayerName = args.Parameters.GetValue<string>(nameof(FirstPlayerName));
         SecondPlayerName = args.Parameters.GetValue<string>(nameof(SecondPlayerName));
         CanMakeMove = args.Parameters.GetValue<bool>("CanMakeMove");
-        var selectedGridSize = args.Parameters.GetValue<GridToPlaySize>("GridSize");
-
-        _gameController = new GameController(selectedGridSize);
-        Lines = new(_gameController.LineList);
-        Dots = new(_gameController.PointList);
 
         if (SecondPlayerName == "Компьютер")
         {
             _isAgainstAi = true;
+            _gameController = new GameController(selectedGridSize);
             _aiPlayer = new AiPlayer(_gameController, _secondPlayerColor);
+        }
+        else
+        {
+            _signalRClient.OnOpponentMakeMove += OnOpponentMakeMove;
+            _signalRClient.OnGainPoints += OnGainPoints;
+            _signalRClient.OnGameEnd += OnGameEndAsync;
+            _signalRClient.OnOpponentLeaveGame += OnOpponentLeaveGameAsync;
+            _signalRClient.OnConnectionLost += OnConnectionLost;
+
+            _lobbyId = args.Parameters.GetValue<string>("LobbyId");
         }
 
         return base.OnNavigatedTo(args);
@@ -99,99 +117,23 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     #region CommandMethods
 
-    // private async Task ClickLineCommandExecuteAsync(DrawableLine line)
-    // {
-    //     line.Color = _firstPlayerColor;
-    //     CanMakeMove = false;
-    //
-    //     var points = _gameController.MakeMove(line);
-    //     if (points > 0)
-    //     {
-    //         CurrentPlayerScore += points;
-    //         CanMakeMove = true;
-    //     }
-    //     else
-    //     {
-    //         if (_isAgainstAi)
-    //         {
-    //             ExecuteAiTurn();
-    //         }
-    //     }
-    //
-    //     if (!_isAgainstAi)
-    //     {
-    //         await _signalRClient.MakeMoveAsync(line.StartPoint.X, line.StartPoint.Y, line.EndPoint.X, line.EndPoint.Y);
-    //     }
-    //
-    //     if (_gameController.IsGameEnded())
-    //     {
-    //         await EndGameAsync();
-    //     }
-    // }
     private async Task ClickLineCommandExecuteAsync(DrawableLine line)
     {
         line.Color = _firstPlayerColor;
-        CanMakeMove = false;
-
-        var points = _gameController.MakeMove(line);
-        if (points > 0)
-        {
-            CurrentPlayerScore += points;
-            CanMakeMove = true;
-        }
-        else if (_isAgainstAi)
-        {
-            await ExecuteAiTurnAsync().ConfigureAwait(false);
-        }
-
-        if (!_isAgainstAi)
-        {
-            await _signalRClient.MakeMoveAsync(line.StartPoint.X, line.StartPoint.Y, line.EndPoint.X, line.EndPoint.Y);
-        }
-
-        if (_gameController.IsGameEnded())
-        {
-            await EndGameAsync();
-        }
-    }
-
-    private async Task ExecuteAiTurnAsync()
-    {
-        int pointsGained;
-        do
-        {
-            pointsGained = _aiPlayer.MakeMove(Lines);
-            OpponentPlayerScore += pointsGained;
-
-            if (pointsGained > 0 && !_gameController.IsGameEnded())
-            {
-                await Task.Delay(2000).ConfigureAwait(false);
-            }
-        } while (pointsGained > 0);
-
-        CanMakeMove = true;
-    }
-
-    private async Task EndGameAsync()
-    {
-        await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
-                                                                    {
-                                                                        MessageBox.Show("Игра окончена!", MsgBoxButton.OK, MsgBoxImage.Information);
-                                                                    });
 
         if (_isAgainstAi)
         {
-            await _navigationService.NavigateAsync(Routes.Home).ConfigureAwait(false);
-            return;
+            await ProcessAiLogicAsync(line).ConfigureAwait(false);
         }
-
-        await _navigationService.NavigateAsync(Routes.PlayersLobby, new DynamicDictionary(("FirstPlayerName", FirstPlayerName)))
-                                .ConfigureAwait(false);
+        else
+        {
+            await _signalRClient.MakeMoveAsync(_lobbyId, line.StartPoint.X, line.StartPoint.Y, line.EndPoint.X, line.EndPoint.Y);
+        }
     }
 
     private bool ClickLineCommandCanExecute(DrawableLine drawable)
     {
-        return CanMakeMove && drawable.Color != _secondPlayerColor;
+        return CanMakeMove && !drawable.IsClicked;
     }
 
     private async Task LeaveGameCommandExecuteAsync()
@@ -220,56 +162,103 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
     
     #region GameEventHandlers
 
-    private void OnOpponentMakeMove(int x1, int y1, int x2, int y2)
+    private void OnOpponentMakeMove(int x1, int y1, int x2, int y2, int opponentPlayerScore)
     {
         var line = Lines.First(x => x.StartPoint.X == x1 && x.StartPoint.Y == y1 && x.EndPoint.X == x2 && x.EndPoint.Y == y2);
         line.Color = _secondPlayerColor;
 
-        var points = _gameController.MakeMove(line);
-        if(points > 0)
-        {
-            CanMakeMove = false;
-            OpponentPlayerScore += points;
-        }
-        else
-        {
-            CanMakeMove = true;
-        }
-
-        if (_gameController.IsGameEnded())
-        {
-            EndGameAsync().SafeFireAndForget();
-        }
+        OpponentPlayerScore += opponentPlayerScore;
+        CanMakeMove = opponentPlayerScore == 0;
     }
 
-    private async Task OnOpponentWinGame()
+    private void OnGainPoints(int gainPoints)
+    {
+        CurrentPlayerScore += gainPoints;
+        CanMakeMove = gainPoints > 0;
+    }
+
+    private async Task OnGameEndAsync()
+    {
+        await EndGameAsync().ConfigureAwait(false);
+    }
+
+    private async Task OnOpponentLeaveGameAsync()
+    {
+        await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
+                                                                    {
+                                                                        MessageBox.Show("Соперник покинул игру. Текущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Information);
+                                                                    });
+        await _navigationService.NavigateAsync(Routes.PlayersLobby, new DynamicDictionary(("FirstPlayerName", FirstPlayerName))).ConfigureAwait(false);
+    }
+
+    private async Task EndGameAsync()
     {
         await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
                                                                     {
                                                                         MessageBox.Show("Игра окончена!", MsgBoxButton.OK, MsgBoxImage.Information);
                                                                     });
 
-        await _navigationService.NavigateAsync(Routes.PlayersLobby,
-                                               new DynamicDictionary(("FirstPlayerName", FirstPlayerName))).ConfigureAwait(false);
+        if (_isAgainstAi)
+        {
+            await _navigationService.NavigateAsync(Routes.Home).ConfigureAwait(false);
+            return;
+        }
+
+        await _navigationService.NavigateAsync(Routes.PlayersLobby, new DynamicDictionary(("FirstPlayerName", FirstPlayerName)))
+            .ConfigureAwait(false);
     }
 
-    private async Task OnOpponentLeaveGame()
+    #endregion
+
+    #region AiProcessing
+
+    private async Task ProcessAiLogicAsync(DrawableLine line)
     {
-        await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
-                                                                    {
-                                                                        MessageBox.Show("Соперник покинул игру. Текущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Information);
-                                                                    });
-        await _navigationService.NavigateAsync(Routes.PlayersLobby,
-                                               new DynamicDictionary(("FirstPlayerName", FirstPlayerName))).ConfigureAwait(false);
+        var points = _gameController.MakeMove(line.StartPoint.X, line.StartPoint.Y, line.EndPoint.X, line.EndPoint.Y);
+        CanMakeMove = points > 0;
+        CurrentPlayerScore += points;
+
+        if (!CanMakeMove)
+        {
+            await ExecuteAiTurnAsync().ConfigureAwait(false);
+        }
+
+        if (_gameController.IsGameEnded())
+        {
+            await EndGameAsync();
+        }
+    }
+
+    private async Task ExecuteAiTurnAsync()
+    {
+        int pointsGained;
+        do
+        {
+            pointsGained = _aiPlayer.MakeMove(Lines);
+            OpponentPlayerScore += pointsGained;
+    
+            if (pointsGained > 0 && !_gameController.IsGameEnded())
+            {
+                await Task.Delay(2000).ConfigureAwait(false);
+            }
+        } while (pointsGained > 0);
+    
+        CanMakeMove = true;
     }
 
     #endregion
 
     public void Dispose()
     {
+        if (_isAgainstAi)
+        {
+            return;
+        }
+
         _signalRClient.OnOpponentMakeMove -= OnOpponentMakeMove;
-        _signalRClient.OnOpponentWinGame += OnOpponentWinGame;
-        _signalRClient.OnOpponentLeaveGame -= OnOpponentLeaveGame;
+        _signalRClient.OnGainPoints += OnGainPoints;
+        _signalRClient.OnGameEnd += OnGameEndAsync;
+        _signalRClient.OnOpponentLeaveGame -= OnOpponentLeaveGameAsync;
         _signalRClient.OnConnectionLost -= OnConnectionLost;
     }
 

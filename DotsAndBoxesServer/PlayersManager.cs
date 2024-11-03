@@ -9,6 +9,8 @@ public class PlayersManager
 
     private readonly ConcurrentDictionary<string, string> _playerToOpponent = new();
 
+    private readonly List<GameLobby> _gameLobbies = new();
+
     public void AddPlayer(string connectionId, Player player)
     {
         if (!_connectionIdToPlayer.TryAdd(connectionId, player))
@@ -57,10 +59,32 @@ public class PlayersManager
         return playerToUpdate;
     }
 
-    public void MapOpponents(string firstPlayerConnectionId, string secondPlayerConnectionId)
+    public string MapOpponents(string firstPlayerConnectionId, string secondPlayerConnectionId, GridSize gridSize)
     {
-        _playerToOpponent[firstPlayerConnectionId] = secondPlayerConnectionId;
-        _playerToOpponent[secondPlayerConnectionId] = firstPlayerConnectionId;
+        var gameLobby = new GameLobby(firstPlayerConnectionId, secondPlayerConnectionId, gridSize);
+        _gameLobbies.Add(gameLobby);
+
+        return gameLobby.Id;
+    }
+
+    public (string opponentConnectionId, int gainPoints, bool isGameEnd) OpponentMakeMove(string lobbyId,
+                                                                                          string playerConnectionId,
+                                                                                          int startPointX,
+                                                                                          int startPointY,
+                                                                                          int endPointX,
+                                                                                          int endPointY)
+    {
+        var gameLobby = _gameLobbies.FirstOrDefault(x => x.Id == lobbyId);
+        if (gameLobby is null)
+        {
+            throw new InvalidDataException();
+        }
+
+        var points = gameLobby.MakeMove(startPointX, startPointY, endPointX, endPointY);
+        var opponentConnectionId = gameLobby.GetOpponentConnectionId(playerConnectionId);
+        var isGameEnd = gameLobby.IsGameEnded();
+
+        return (opponentConnectionId, points, isGameEnd);
     }
 
     public string GetOpponentConnectionId(string connectionId)
@@ -68,11 +92,14 @@ public class PlayersManager
         return _playerToOpponent.GetValueOrDefault(connectionId);
     }
 
-    public void RemoveOpponent(string connectionId)
+    public void GameEnd(string lobbyId)
     {
-        if (!_playerToOpponent.TryRemove(connectionId, out _))
+        var gameLobby = _gameLobbies.FirstOrDefault(x => x.Id == lobbyId);
+        if (gameLobby is null)
         {
-            throw new KeyNotFoundException($"Opponent for '{connectionId}' connection id not found");
+            throw new InvalidDataException();
         }
+
+        _gameLobbies.Remove(gameLobby);
     }
 }

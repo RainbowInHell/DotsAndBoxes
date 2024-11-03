@@ -1,8 +1,9 @@
-﻿using DotsAndBoxesCommon.Attributes;
+﻿
+using DotsAndBoxesServerAPI.Attributes;
 
 namespace DotsAndBoxesServerAPI.Models;
 
-public enum GridToPlaySize
+public enum GridSize
 {
     [ExtendedDisplayName("3x3")]
     ThreeToThree,

@@ -26,7 +26,7 @@ public sealed partial class HomeViewModel : BaseViewModel
     #region FieldsWithObservableProperties
 
     [ObservableProperty]
-    private GridToPlaySize _selectedGridSize = GridToPlaySize.ThreeToThree;
+    private GridSize _selectedGridSize = GridSize.ThreeToThree;
 
     [ObservableProperty]
     private string _firstPlayerName;
@@ -67,7 +67,7 @@ public sealed partial class HomeViewModel : BaseViewModel
 
     #region Properties
 
-    public ObservableCollection<GridToPlaySize> GridSizes { get; } = [GridToPlaySize.ThreeToThree, GridToPlaySize.FiveToFive, GridToPlaySize.SixToSix];
+    public ObservableCollection<GridSize> GridSizes { get; } = [GridSize.ThreeToThree, GridSize.FiveToFive, GridSize.SixToSix];
 
     public ObservableCollection<GameTypeSelectableItem> GameTypes { get; } =
     [

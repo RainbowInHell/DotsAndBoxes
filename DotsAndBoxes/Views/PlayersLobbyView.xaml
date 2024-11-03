@@ -53,7 +53,7 @@
                               materialDesign:HintAssist.Hint="Размер сетки"
                               materialDesign:HintAssist.IsFloating="True">
                         <ComboBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type Models:GridToPlaySize}">
+                            <DataTemplate DataType="{x:Type Models:GridSize}">
                                 <TextBlock Text="{Binding ., Converter={StaticResource enumToDisplayNameConverter}}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>

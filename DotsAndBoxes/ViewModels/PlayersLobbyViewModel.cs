@@ -28,7 +28,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
     private GridToPlayType _selectedGridType = GridToPlayType.Default;
 
     [ObservableProperty]
-    private GridToPlaySize _selectedGridSize = GridToPlaySize.ThreeToThree;
+    private GridSize _selectedGridSize = GridSize.ThreeToThree;
 
     [ObservableProperty]
     private bool _doNotDisturb;
@@ -94,7 +94,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
     public ObservableCollection<GridToPlayType> GridTypes { get; } = [GridToPlayType.Default];
 
-    public ObservableCollection<GridToPlaySize> GridSizes { get; } = [GridToPlaySize.ThreeToThree, GridToPlaySize.FiveToFive, GridToPlaySize.SixToSix];
+    public ObservableCollection<GridSize> GridSizes { get; } = [GridSize.ThreeToThree, GridSize.FiveToFive, GridSize.SixToSix];
 
     #endregion
 
@@ -169,7 +169,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
             {
                 DoNotDisturb = DoNotDisturb,
                 GridToPlayType = SelectedGridType,
-                GridToPlaySize = SelectedGridSize
+                GridSize = SelectedGridSize
             };
 
             if (_currentSettings == newSettings)
@@ -261,7 +261,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
         playerToUpdate.Status = updatedPlayer.Status;
         playerToUpdate.PreferredGridType = updatedPlayer.Settings.GridToPlayType;
-        playerToUpdate.PreferredGridSize = updatedPlayer.Settings.GridToPlaySize;
+        playerToUpdate.PreferredGridSize = updatedPlayer.Settings.GridSize;
     }
 
     /// <summary>
@@ -319,20 +319,22 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
                                                          });
     }
 
-    private void OnChallengeAccept()
+    private void OnChallengeAccept(string lobbyId)
     {
         if (ReceiveChallenge)
         {
             ReceiveChallenge = false;
             _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayerName", CurrentPlayerName),
                                                                            ("SecondPlayerName", ChallengeSenderName),
-                                                                           ("CanMakeMove", true)));
+                                                                           ("CanMakeMove", true),
+                                                                           ("LobbyId", lobbyId)));
         }
         else
         {
             _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayerName", CurrentPlayerName),
                                                                            ("SecondPlayerName", _lastChallengedPlayer),
-                                                                           ("CanMakeMove", false)));
+                                                                           ("CanMakeMove", false),
+                                                                           ("LobbyId", lobbyId)));
         }
     }
 

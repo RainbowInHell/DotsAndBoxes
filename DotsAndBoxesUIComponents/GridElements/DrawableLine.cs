@@ -1,14 +1,7 @@
 ﻿using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace DotsAndBoxesUIComponents;
-
-public readonly struct DrawablePoint
-{
-    public int X { get; init; }
-
-    public int Y { get; init; }
-}
+namespace DotsAndBoxesUIComponents.GridElements;
 
 public partial class DrawableLine : ObservableObject
 {

@@ -36,14 +36,15 @@ public sealed class SignalRClient : IAsyncDisposable
 
     public event Action OnChallengeReject;
 
-    public event Action OnChallengeAccept;
+    public event Action<string> OnChallengeAccept;
 
     #endregion
 
     #region GameEvents
 
-    public event Action<int, int, int, int> OnOpponentMakeMove;
-    public event Func<Task> OnOpponentWinGame;
+    public event Action<int, int, int, int, int> OnOpponentMakeMove;
+    public event Action<int> OnGainPoints;
+    public event Func<Task> OnGameEnd;
     public event Func<Task> OnOpponentLeaveGame;
 
     #endregion
@@ -110,18 +111,19 @@ public sealed class SignalRClient : IAsyncDisposable
                                                                                                                    OnChallengeReject?.Invoke();
                                                                                                                }),
 
-            _hubConnection.On(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeAccept), () =>
-                                                                                                                {
-                                                                                                                    OnChallengeAccept?.Invoke();
-                                                                                                                }),
+            _hubConnection.On<string>(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeAccept),
+                                      lobbyId => OnChallengeAccept?.Invoke(lobbyId)),
 
-            _hubConnection.On<int, int, int, int>(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentMakeMove),
-                                      (x1, y1, x2, y2) => OnOpponentMakeMove?.Invoke(x1, y1, x2, y2)),
+            _hubConnection.On<int, int, int, int, int>(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentMakeMove),
+                                      (x1, y1, x2, y2, gainPoints) => OnOpponentMakeMove?.Invoke(x1, y1, x2, y2, gainPoints)),
+            
+            _hubConnection.On<int>(HubEventActions.GetHubEventActionName(HubEventActionType.OnGainPoints),
+                                   gainPoints => OnGainPoints?.Invoke(gainPoints)),
 
-            _hubConnection.On(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentWinGame), () =>
-                                                                                                                 {
-                                                                                                                     OnOpponentWinGame?.Invoke();
-                                                                                                                 }),
+            _hubConnection.On(HubEventActions.GetHubEventActionName(HubEventActionType.OnGameEnd), () =>
+                                                                                                       {
+                                                                                                           OnGameEnd?.Invoke();
+                                                                                                       }),
 
             _hubConnection.On(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentLeaveGame), () =>
                                                                                                               {
@@ -199,11 +201,11 @@ public sealed class SignalRClient : IAsyncDisposable
         }
     }
 
-    public async Task MakeMoveAsync(int x1, int y1, int x2, int y2)
+    public async Task MakeMoveAsync(string lobbyId, int x1, int y1, int x2, int y2)
     {
         try
         {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.OpponentMakeMove), x1, y1, x2, y2);
+            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.OpponentMakeMove), lobbyId, x1, y1, x2, y2);
         }
         catch (Exception ex)
         {
@@ -221,19 +223,6 @@ public sealed class SignalRClient : IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogError("Can't leave game due to an error: {ex}", ex);
-            throw;
-        }
-    }
-
-    public async Task EndGameAsync()
-    {
-        try
-        {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.OpponentWinGame));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Can't end game due to an error: {ex}", ex);
             throw;
         }
     }

@@ -7,7 +7,7 @@
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:vms="clr-namespace:DotsAndBoxes.ViewModels"
       xmlns:Behaviors="clr-namespace:DotsAndBoxesUIComponents.Behaviors;assembly=DotsAndBoxesUIComponents"
-      xmlns:DotsAndBoxesUIComponents="clr-namespace:DotsAndBoxesUIComponents;assembly=DotsAndBoxesUIComponents"
+      xmlns:GridElements="clr-namespace:DotsAndBoxesUIComponents.GridElements;assembly=DotsAndBoxesUIComponents"
       mc:Ignorable="d"
       TextElement.Foreground="{DynamicResource MaterialDesignBody}"
       d:DataContext="{d:DesignInstance Type={x:Type vms:GameViewModel}}"
@@ -65,7 +65,7 @@
                         </ItemsControl.ItemsPanel>
         
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type DotsAndBoxesUIComponents:DrawableLine}">
+                            <DataTemplate DataType="{x:Type GridElements:DrawableLine}">
                                 <Line X1="{Binding StartPoint.X}" Y1="{Binding StartPoint.Y}" X2="{Binding EndPoint.X}" Y2="{Binding EndPoint.Y}"
                                       Stroke="{Binding Color}" StrokeThickness="8">
                                     <i:Interaction.Behaviors>

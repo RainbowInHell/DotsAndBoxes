@@ -13,7 +13,8 @@
         OnChallengeAccept,
 
         OnOpponentMakeMove,
-        OnOpponentWinGame,
+        OnGainPoints,
+        OnGameEnd,
         OnOpponentLeaveGame
     }
 }

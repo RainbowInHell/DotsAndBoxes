@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Reflection;
 using System.Windows.Data;
-using DotsAndBoxesCommon.Attributes;
+using DotsAndBoxesServerAPI.Attributes;
 
 namespace DotsAndBoxesUIComponents;
 

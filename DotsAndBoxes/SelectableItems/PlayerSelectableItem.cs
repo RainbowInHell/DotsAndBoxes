@@ -15,7 +15,7 @@ public partial class PlayerSelectableItem : ObservableObject
     private GridToPlayType _preferredGridType;
 
     [ObservableProperty]
-    private GridToPlaySize _preferredGridSize;
+    private GridSize _preferredGridSize;
 
     [ObservableProperty]
     private bool _canBeChallenged = true;
@@ -28,7 +28,7 @@ public partial class PlayerSelectableItem : ObservableObject
         Name = player.Name;
         Status = player.Status;
         PreferredGridType = GridToPlayType.Default;
-        PreferredGridSize = GridToPlaySize.FiveToFive;
+        PreferredGridSize = GridSize.FiveToFive;
     }
 
     partial void OnStatusChanged(PlayerStatus value)

@@ -6,5 +6,5 @@ public record struct SettingsHolder
 
     public GridToPlayType GridToPlayType { get; init; }
 
-    public GridToPlaySize GridToPlaySize { get; init; }
+    public GridSize GridSize { get; init; }
 }

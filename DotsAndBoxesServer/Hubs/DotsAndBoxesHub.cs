@@ -79,18 +79,18 @@ public class DotsAndBoxesHub : Hub
         var challengeSenderConnectionId = _playersManager.GetConnectionId(challengeSenderName);
         var challengedPlayerConnectionId = Context.ConnectionId;
 
-        var challengedPlayerName = _playersManager.GetConnectedPlayer(Context.ConnectionId).Name;
+        var challengedPlayer = _playersManager.GetConnectedPlayer(Context.ConnectionId);
 
         // Challenge was accepted.
         if (challengeAccepted)
         {
-            _playersManager.MapOpponents(challengeSenderConnectionId, challengedPlayerConnectionId);
+            var gameLobbyId = _playersManager.MapOpponents(challengeSenderConnectionId, challengedPlayerConnectionId, challengedPlayer.Settings.GridSize);
 
             await Clients.Clients(challengeSenderConnectionId, challengedPlayerConnectionId)
-                         .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeAccept));
+                         .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeAccept), gameLobbyId);
 
             await Clients.AllExcept(challengeSenderConnectionId, challengedPlayerConnectionId)
-                         .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), challengedPlayerName, PlayerStatus.Playing);
+                         .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), challengedPlayer.Name, PlayerStatus.Playing);
             await Clients.AllExcept(challengeSenderConnectionId, challengedPlayerConnectionId)
                           .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), challengeSenderName, PlayerStatus.Playing);
         }
@@ -101,16 +101,27 @@ public class DotsAndBoxesHub : Hub
                          .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnChallengeReject));
 
             await Clients.AllExcept(challengeSenderConnectionId, challengedPlayerConnectionId)
-                         .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), challengedPlayerName, PlayerStatus.FreeToPlay);
+                         .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), challengedPlayer.Name, PlayerStatus.FreeToPlay);
         }
     }
 
     [HubMethodName(nameof(ServerMethodType.OpponentMakeMove))]
-    public async Task OpponentMakeMoveAsync(int x1, int y1, int x2, int y2)
+    public async Task OpponentMakeMoveAsync(string lobbyId, int startPointX, int startPointY, int endPointX, int endPointY)
     {
-        var opponentConnectionId = _playersManager.GetOpponentConnectionId(Context.ConnectionId);
-        await Clients.Client(opponentConnectionId)
-                     .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentMakeMove), x1, y1, x2, y2);
+        var gameStateTuple = _playersManager.OpponentMakeMove(lobbyId, Context.ConnectionId, startPointX, startPointY, endPointX, endPointY);
+
+        await Clients.Client(Context.ConnectionId)
+                     .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnGainPoints), gameStateTuple.gainPoints);
+
+        await Clients.Client(gameStateTuple.opponentConnectionId)
+                     .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentMakeMove), startPointX, startPointY, endPointX, endPointY, gameStateTuple.gainPoints);
+
+        if (gameStateTuple.isGameEnd)
+        {
+            _playersManager.GameEnd(lobbyId);
+            await Clients.Clients(Context.ConnectionId, gameStateTuple.opponentConnectionId)
+                         .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnGameEnd));
+        }
     }
 
     [HubMethodName(nameof(ServerMethodType.OpponentLeaveGame))]
@@ -123,14 +134,5 @@ public class DotsAndBoxesHub : Hub
                      .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentLeaveGame));
         await Clients.AllExcept(Context.ConnectionId)
                      .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnPlayerChangeStatus), leavedPlayer.Name, leavedPlayer.Status);
-    }
-
-    [HubMethodName(nameof(ServerMethodType.OpponentWinGame))]
-    public async Task OpponentWinGameAsync()
-    {
-        var opponentConnectionId = _playersManager.GetOpponentConnectionId(Context.ConnectionId);
-
-        await Clients.Client(opponentConnectionId)
-                     .SendAsync(HubEventActions.GetHubEventActionName(HubEventActionType.OnOpponentWinGame));
     }
 }

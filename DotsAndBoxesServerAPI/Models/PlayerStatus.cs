@@ -1,4 +1,4 @@
-﻿using DotsAndBoxesCommon.Attributes;
+﻿using DotsAndBoxesServerAPI.Attributes;
 
 namespace DotsAndBoxesServerAPI.Models;
 

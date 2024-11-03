@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace DotsAndBoxesCommon.Attributes;
+namespace DotsAndBoxesServerAPI.Attributes;
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Event | AttributeTargets.Class | AttributeTargets.Method | AttributeTargets.Field)]
 public class ExtendedDisplayNameAttribute(string name) : DisplayNameAttribute

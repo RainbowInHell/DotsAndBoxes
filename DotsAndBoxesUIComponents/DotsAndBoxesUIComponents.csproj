@@ -15,10 +15,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DotsAndBoxesCommon\DotsAndBoxesCommon.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
       <None Remove="Controls\Icons\Error.png" />
       <Resource Include="Controls\Icons\Error.png" />
       <None Remove="Controls\Icons\Information.png" />
@@ -27,5 +23,9 @@
       <Resource Include="Controls\Icons\Question.png" />
       <None Remove="Controls\Icons\Warning.png" />
       <Resource Include="Controls\Icons\Warning.png" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DotsAndBoxesServerAPI\DotsAndBoxesServerAPI.csproj" />
     </ItemGroup>
 </Project>

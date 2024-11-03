@@ -16,7 +16,6 @@ public static class ServerMethods
             { ServerMethodType.PlayerSendChallengeAnswer, ServerMethodType.PlayerSendChallengeAnswer.ToString() },
             { ServerMethodType.OpponentMakeMove, ServerMethodType.OpponentMakeMove.ToString() },
             { ServerMethodType.OpponentLeaveGame, ServerMethodType.OpponentLeaveGame.ToString() },
-            { ServerMethodType.OpponentWinGame, ServerMethodType.OpponentWinGame.ToString() }
         };
     }
 

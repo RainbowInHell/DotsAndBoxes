@@ -13,7 +13,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         _navigationService.OnNavigated += OnNavigated;
 
         _navigationService.Navigate(Routes.Home);
-        // _navigationService.Navigate(Routes.Game);
     }
 
     public BaseViewModel CurrentViewModel => _navigationService.CurrentNavigatedItem;
