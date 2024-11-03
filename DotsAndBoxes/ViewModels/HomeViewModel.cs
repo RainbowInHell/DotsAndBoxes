@@ -26,13 +26,13 @@ public sealed partial class HomeViewModel : BaseViewModel
     #region FieldsWithObservableProperties
 
     [ObservableProperty]
+    private GridToPlaySize _selectedGridSize = GridToPlaySize.ThreeToThree;
+
+    [ObservableProperty]
     private string _firstPlayerName;
 
     [ObservableProperty]
     private string _secondPlayerName;
-
-    [ObservableProperty]
-    private bool _doNotDisturb;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -67,6 +67,8 @@ public sealed partial class HomeViewModel : BaseViewModel
 
     #region Properties
 
+    public ObservableCollection<GridToPlaySize> GridSizes { get; } = [GridToPlaySize.ThreeToThree, GridToPlaySize.FiveToFive, GridToPlaySize.SixToSix];
+
     public ObservableCollection<GameTypeSelectableItem> GameTypes { get; } =
     [
         new ()
@@ -74,12 +76,6 @@ public sealed partial class HomeViewModel : BaseViewModel
             Icon = PackIconKind.Account,
             Name = "Одиночный"
         },
-        //
-        // new GameTypeSelectableItem
-        // {
-        //     Icon = PackIconKind.PersonMultiple,
-        //     Name = "Вдвоем"
-        // },
         new()
         {
             Icon = PackIconKind.LanConnect,
@@ -127,7 +123,8 @@ public sealed partial class HomeViewModel : BaseViewModel
         {
             _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayerName", FirstPlayerName),
                                                                            ("SecondPlayerName", "Компьютер"),
-                                                                           ("CanMakeMove", true)));
+                                                                           ("CanMakeMove", true),
+                                                                           ("GridSize", SelectedGridSize)));
             return;
         }
 
@@ -155,7 +152,7 @@ public sealed partial class HomeViewModel : BaseViewModel
             var newConnectedPlayer = new Player
             {
                 Name = FirstPlayerName,
-                Status = DoNotDisturb ? PlayerStatus.DoNotDisturb : PlayerStatus.FreeToPlay
+                Status = PlayerStatus.FreeToPlay
             };
 
             await _signalRClient.SendNewPlayerConnectAsync(newConnectedPlayer).ConfigureAwait(false);

@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using DotsAndBoxes.Attributes;
 using DotsAndBoxes.Navigation;
 using DotsAndBoxes.SignalR;
+using DotsAndBoxesServerAPI.Models;
 using DotsAndBoxesUIComponents;
 using MessageBox = DotsAndBoxesUIComponents.MessageBox;
 
@@ -15,12 +16,13 @@ namespace DotsAndBoxes.ViewModels;
 [Route(Routes.Game)]
 public sealed partial class GameViewModel : BaseViewModel, IDisposable
 {
-    private AiPlayer _aiPlayer; // The AI player instance.
-    private bool _isAgainstAi; // To track if the game is against the AI.
+    private AiPlayer _aiPlayer;
+
+    private bool _isAgainstAi;
 
     private readonly SignalRClient _signalRClient;
 
-    private readonly GameController _gameController;
+    private GameController _gameController;
 
     private readonly Brush _firstPlayerColor = Brushes.LawnGreen;
 
@@ -43,15 +45,11 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
         _signalRClient = signalRClient;
         _navigationService = navigationService;
-        _gameController = new GameController();
 
         _signalRClient.OnOpponentMakeMove += OnOpponentMakeMove;
         _signalRClient.OnOpponentWinGame += OnOpponentWinGame;
         _signalRClient.OnOpponentLeaveGame += OnOpponentLeaveGame;
         _signalRClient.OnConnectionLost += OnConnectionLost;
-
-        Lines = new(_gameController.LineList);
-        Dots = new(_gameController.PointList);
 
         ClickLineCommand = new AsyncRelayCommand<DrawableLine>(ClickLineCommandExecuteAsync, ClickLineCommandCanExecute);
         LeaveGameCommand = new AsyncRelayCommand(LeaveGameCommandExecuteAsync);
@@ -59,9 +57,9 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     #region Properties
 
-    public ObservableCollection<DrawableLine> Lines { get; }
+    public ObservableCollection<DrawableLine> Lines { get; private set; }
 
-    public ObservableCollection<DrawablePoint> Dots { get; }
+    public ObservableCollection<DrawablePoint> Dots { get; private set; }
 
     public string FirstPlayerName { get; private set; }
 
@@ -84,6 +82,11 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
         FirstPlayerName = args.Parameters.GetValue<string>(nameof(FirstPlayerName));
         SecondPlayerName = args.Parameters.GetValue<string>(nameof(SecondPlayerName));
         CanMakeMove = args.Parameters.GetValue<bool>("CanMakeMove");
+        var selectedGridSize = args.Parameters.GetValue<GridToPlaySize>("GridSize");
+
+        _gameController = new GameController(selectedGridSize);
+        Lines = new(_gameController.LineList);
+        Dots = new(_gameController.PointList);
 
         if (SecondPlayerName == "Компьютер")
         {

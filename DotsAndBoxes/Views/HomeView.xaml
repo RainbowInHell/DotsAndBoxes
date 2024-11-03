@@ -6,6 +6,7 @@
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
       xmlns:vms="clr-namespace:DotsAndBoxes.ViewModels"
       xmlns:SelectableItems="clr-namespace:DotsAndBoxes.SelectableItems"
+      xmlns:Models="clr-namespace:DotsAndBoxesServerAPI.Models;assembly=DotsAndBoxesServerAPI"
       d:DataContext="{d:DesignInstance Type={x:Type vms:HomeViewModel}}"
       mc:Ignorable="d" Height="400">
     <Grid>
@@ -46,6 +47,30 @@
                                     <materialDesign:PackIcon Kind="{Binding Icon}" Margin="0,0,5,0" />
                                     <TextBlock Text="{Binding Name}" />
                                 </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+
+                <StackPanel Orientation="Vertical" Margin="0,0,0,20"
+                            Visibility="{Binding SelectedGameType,
+                                                  Converter={StaticResource enumToVisibilityConverter},
+                                                  ConverterParameter={x:Static materialDesign:PackIconKind.Account}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="Размер сетки" />
+                        <Border Grid.Column="1"
+                                Style="{StaticResource horizontalSeparatorBorderStyle}" />
+                    </Grid>
+                    <ComboBox Margin="0,0,5,0"
+                              ItemsSource="{Binding GridSizes}"
+                              SelectedItem="{Binding SelectedGridSize}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type Models:GridToPlaySize}">
+                                <TextBlock Text="{Binding ., Converter={StaticResource enumToDisplayNameConverter}}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>

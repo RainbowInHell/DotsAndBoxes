@@ -1,4 +1,5 @@
-﻿using DotsAndBoxesUIComponents;
+﻿using DotsAndBoxesServerAPI.Models;
+using DotsAndBoxesUIComponents;
 
 namespace DotsAndBoxes;
 
@@ -9,7 +10,7 @@ namespace DotsAndBoxes;
 public class GameController
 {
     // Constants that define the game settings.
-    private const int N = 2; // Represents the number of squares per row and per column (a 4x4 grid, meaning there are 4 squares in each direction).
+    private readonly int _n; // Represents the number of squares per row and per column (a 4x4 grid, meaning there are 4 squares in each direction).
     private const int DefaultEllipseSize = 10; // A default size used for drawing points (dots) on the UI.
     private const int DefaultWidthHeight = 400; // The total width and height of the game board in pixels.
 
@@ -35,22 +36,23 @@ public class GameController
     /// <summary>
     /// Constructor that sets up the game board. It initializes the points and lines, and prepares the arrays that track line clicks.
     /// </summary>
-    public GameController()
+    public GameController(GridToPlaySize gridSize)
     {
+        _n = GridSizeTypeToInt(gridSize);
         // Calculate the distance between each point on the board.
         // This is done by dividing the total width of the board by the number of squares.
         // For example, if `n` is 4, and the width is 400 pixels, then each point will be 100 pixels apart.
-        _distanceBetweenPoints = DefaultWidthHeight / N;
+        _distanceBetweenPoints = DefaultWidthHeight / _n;
 
         // Initialize the list of points (dots) and lines (horizontal and vertical).
-        PointList = CreatePointList(N, N);
-        LineList = CreateLineList(N, N);
+        PointList = CreatePointList(_n, _n);
+        LineList = CreateLineList(_n, _n);
 
         // Initialize the boolean arrays that track clicked lines:
         // `linesX` will have `n + 1` rows because there are `n + 1` horizontal lines (1 more than the number of squares).
         // `linesY` will have `n + 1` columns because there are `n + 1` vertical lines (1 more than the number of squares).
-        _linesX = new bool[N + 1, N];
-        _linesY = new bool[N, N + 1];
+        _linesX = new bool[_n + 1, _n];
+        _linesY = new bool[_n, _n + 1];
     }
 
     /// <summary>
@@ -177,13 +179,13 @@ public class GameController
         if (IsHorizontalLine(drawable))
         {
             if (y > 0 && IsSquareComplete(x, y - 1)) completedSquaresCounter++; // Check the square above.
-            if (y < N && IsSquareComplete(x, y)) completedSquaresCounter++; // Check the square below.
+            if (y < _n && IsSquareComplete(x, y)) completedSquaresCounter++; // Check the square below.
         }
         else
         {
             // Vertical lines can complete a square to the left or right of them.
             if (x > 0 && IsSquareComplete(x - 1, y)) completedSquaresCounter++; // Check the square to the left.
-            if (x < N && IsSquareComplete(x, y)) completedSquaresCounter++; // Check the square to the right.
+            if (x < _n && IsSquareComplete(x, y)) completedSquaresCounter++; // Check the square to the right.
         }
 
         _completedBoxesTracker += completedSquaresCounter;
@@ -193,7 +195,7 @@ public class GameController
     /// <summary>
     /// Determines if the game has ended by checking if all possible squares are completed.
     /// </summary>
-    public bool IsGameEnded() => _completedBoxesTracker == N * N;
+    public bool IsGameEnded() => _completedBoxesTracker == _n * _n;
 
     /// <summary>
     /// Marks a line as clicked in the appropriate boolean array.
@@ -231,5 +233,16 @@ public class GameController
     {
         // A line is considered horizontal if its start and end points share the same Y coordinate.
         return line.StartPoint.Y == line.EndPoint.Y;
+    }
+
+    private static int GridSizeTypeToInt(GridToPlaySize gridSize)
+    {
+        return gridSize switch
+        {
+            GridToPlaySize.ThreeToThree => 3,
+            GridToPlaySize.FiveToFive => 5,
+            GridToPlaySize.SixToSix => 6,
+            _ => throw new ArgumentOutOfRangeException(nameof(gridSize), gridSize, null)
+        };
     }
 }

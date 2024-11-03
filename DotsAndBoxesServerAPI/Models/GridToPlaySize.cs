@@ -12,7 +12,4 @@ public enum GridToPlaySize
 
     [ExtendedDisplayName("6x6")]
     SixToSix,
-
-    [ExtendedDisplayName("7x7")]
-    SevenToSeven
 }

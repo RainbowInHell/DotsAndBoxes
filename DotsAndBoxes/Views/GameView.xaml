@@ -16,10 +16,26 @@
                 Width="Auto">
         <StackPanel Margin="10,0,10,0"
                     Orientation="Horizontal">
+
             <StackPanel VerticalAlignment="Center">
                 <materialDesign:Card UniformCornerRadius="6"
                                      Height="76"
-                                     Width="83">
+                                     Width="83"
+                                     BorderThickness="2"
+                                     Background="White">
+                    <materialDesign:Card.Style>
+                        <Style TargetType="materialDesign:Card">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CanMakeMove}" Value="True">
+                                    <Setter Property="BorderBrush" Value="LawnGreen" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding CanMakeMove}" Value="False">
+                                    <Setter Property="BorderBrush" Value="Transparent" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </materialDesign:Card.Style>
+
                     <TextBlock Text="{Binding CurrentPlayerScore, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
@@ -27,12 +43,14 @@
                                Foreground="LawnGreen"
                                Height="100" />
                 </materialDesign:Card>
+
                 <materialDesign:Chip Margin="10"
                                      Content="{Binding FirstPlayerName}"
                                      Icon="1"
                                      Width="100" />
             </StackPanel>
 
+            
             <materialDesign:Card Style="{StaticResource MaterialDesignOutlinedCard}"
                                  Margin="20"
                                  UniformCornerRadius="6">
@@ -91,7 +109,21 @@
             <StackPanel VerticalAlignment="Center">
                 <materialDesign:Card UniformCornerRadius="6"
                                      Height="76"
-                                     Width="83">
+                                     Width="83"
+                                     BorderThickness="2"
+                                     Background="White">
+                    <materialDesign:Card.Style>
+                        <Style TargetType="materialDesign:Card">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CanMakeMove}" Value="False">
+                                    <Setter Property="BorderBrush" Value="OrangeRed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding CanMakeMove}" Value="True">
+                                    <Setter Property="BorderBrush" Value="Transparent" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </materialDesign:Card.Style>
                     <TextBlock Text="{Binding OpponentPlayerScore, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"
