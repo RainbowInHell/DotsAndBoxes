@@ -69,11 +69,11 @@ public sealed partial class HomeViewModel : BaseViewModel
 
     public ObservableCollection<GameTypeSelectableItem> GameTypes { get; } =
     [
-        // new GameTypeSelectableItem
-        // {
-        //     Icon = PackIconKind.Account,
-        //     Name = "Одиночный"
-        // },
+        new ()
+        {
+            Icon = PackIconKind.Account,
+            Name = "Одиночный"
+        },
         //
         // new GameTypeSelectableItem
         // {
@@ -121,6 +121,14 @@ public sealed partial class HomeViewModel : BaseViewModel
         {
            _ = MessageBox.Show("Имя игрока должно быть заполнено.", MsgBoxButton.OK, MsgBoxImage.Error);
            return;
+        }
+
+        if (SelectedGameTypeItem.Icon == PackIconKind.Account)
+        {
+            _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayerName", FirstPlayerName),
+                                                                           ("SecondPlayerName", "Компьютер"),
+                                                                           ("CanMakeMove", true)));
+            return;
         }
 
         try

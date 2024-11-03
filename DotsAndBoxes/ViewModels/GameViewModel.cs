@@ -8,12 +8,16 @@ using DotsAndBoxes.Attributes;
 using DotsAndBoxes.Navigation;
 using DotsAndBoxes.SignalR;
 using DotsAndBoxesUIComponents;
+using MessageBox = DotsAndBoxesUIComponents.MessageBox;
 
 namespace DotsAndBoxes.ViewModels;
 
 [Route(Routes.Game)]
 public sealed partial class GameViewModel : BaseViewModel, IDisposable
 {
+    private AiPlayer _aiPlayer; // The AI player instance.
+    private bool _isAgainstAi; // To track if the game is against the AI.
+
     private readonly SignalRClient _signalRClient;
 
     private readonly GameController _gameController;
@@ -81,40 +85,105 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
         SecondPlayerName = args.Parameters.GetValue<string>(nameof(SecondPlayerName));
         CanMakeMove = args.Parameters.GetValue<bool>("CanMakeMove");
 
+        if (SecondPlayerName == "Компьютер")
+        {
+            _isAgainstAi = true;
+            _aiPlayer = new AiPlayer(_gameController, _secondPlayerColor);
+        }
+
         return base.OnNavigatedTo(args);
     }
 
     #region CommandMethods
 
+    // private async Task ClickLineCommandExecuteAsync(DrawableLine line)
+    // {
+    //     line.Color = _firstPlayerColor;
+    //     CanMakeMove = false;
+    //
+    //     var points = _gameController.MakeMove(line);
+    //     if (points > 0)
+    //     {
+    //         CurrentPlayerScore += points;
+    //         CanMakeMove = true;
+    //     }
+    //     else
+    //     {
+    //         if (_isAgainstAi)
+    //         {
+    //             ExecuteAiTurn();
+    //         }
+    //     }
+    //
+    //     if (!_isAgainstAi)
+    //     {
+    //         await _signalRClient.MakeMoveAsync(line.StartPoint.X, line.StartPoint.Y, line.EndPoint.X, line.EndPoint.Y);
+    //     }
+    //
+    //     if (_gameController.IsGameEnded())
+    //     {
+    //         await EndGameAsync();
+    //     }
+    // }
     private async Task ClickLineCommandExecuteAsync(DrawableLine line)
     {
-        // Dummy switch to the thread pool.
-        await Task.Delay(1).ConfigureAwait(false);
-
         line.Color = _firstPlayerColor;
+        CanMakeMove = false;
 
-        if (_gameController.IsSquareCompleted(line))
+        var points = _gameController.MakeMove(line);
+        if (points > 0)
         {
+            CurrentPlayerScore += points;
             CanMakeMove = true;
-            ++CurrentPlayerScore;
         }
-        else
+        else if (_isAgainstAi)
         {
-            CanMakeMove = false;
+            await ExecuteAiTurnAsync().ConfigureAwait(false);
         }
 
-        await _signalRClient.MakeMoveAsync(line.StartPoint.X, line.StartPoint.Y, line.EndPoint.X, line.EndPoint.Y).ConfigureAwait(false);
+        if (!_isAgainstAi)
+        {
+            await _signalRClient.MakeMoveAsync(line.StartPoint.X, line.StartPoint.Y, line.EndPoint.X, line.EndPoint.Y);
+        }
+
         if (_gameController.IsGameEnded())
         {
-            await _signalRClient.EndGameAsync().ConfigureAwait(false);
-
-            await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
-                                                                        {
-                                                                            MessageBox.Show("Игра окончена!", MsgBoxButton.OK, MsgBoxImage.Information);
-                                                                        });
-            await _navigationService.NavigateAsync(Routes.PlayersLobby,
-                                                   new DynamicDictionary(("FirstPlayerName", FirstPlayerName))).ConfigureAwait(false);
+            await EndGameAsync();
         }
+    }
+
+    private async Task ExecuteAiTurnAsync()
+    {
+        int pointsGained;
+        do
+        {
+            pointsGained = _aiPlayer.MakeMove(Lines);
+            OpponentPlayerScore += pointsGained;
+
+            if (pointsGained > 0 && !_gameController.IsGameEnded())
+            {
+                await Task.Delay(2000).ConfigureAwait(false);
+            }
+        } while (pointsGained > 0);
+
+        CanMakeMove = true;
+    }
+
+    private async Task EndGameAsync()
+    {
+        await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
+                                                                    {
+                                                                        MessageBox.Show("Игра окончена!", MsgBoxButton.OK, MsgBoxImage.Information);
+                                                                    });
+
+        if (_isAgainstAi)
+        {
+            await _navigationService.NavigateAsync(Routes.Home).ConfigureAwait(false);
+            return;
+        }
+
+        await _navigationService.NavigateAsync(Routes.PlayersLobby, new DynamicDictionary(("FirstPlayerName", FirstPlayerName)))
+                                .ConfigureAwait(false);
     }
 
     private bool ClickLineCommandCanExecute(DrawableLine drawable)
@@ -153,14 +222,20 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
         var line = Lines.First(x => x.StartPoint.X == x1 && x.StartPoint.Y == y1 && x.EndPoint.X == x2 && x.EndPoint.Y == y2);
         line.Color = _secondPlayerColor;
 
-        if(_gameController.IsSquareCompleted(line))
+        var points = _gameController.MakeMove(line);
+        if(points > 0)
         {
             CanMakeMove = false;
-            ++OpponentPlayerScore;
+            OpponentPlayerScore += points;
         }
         else
         {
             CanMakeMove = true;
+        }
+
+        if (_gameController.IsGameEnded())
+        {
+            EndGameAsync().SafeFireAndForget();
         }
     }
 
