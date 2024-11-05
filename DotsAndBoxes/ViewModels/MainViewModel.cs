@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using DotsAndBoxes.Navigation;
 
-namespace DotsAndBoxes.ViewModels;
+namespace DotsAndBoxes;
 
 public sealed class MainViewModel : ObservableObject, IDisposable
 {

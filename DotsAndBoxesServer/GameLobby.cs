@@ -1,5 +1,4 @@
 ﻿using DotsAndBoxesServerAPI;
-using DotsAndBoxesServerAPI.Models;
 
 namespace DotsAndBoxesServer;
 
@@ -8,8 +7,6 @@ public class GameLobby
     private readonly string _firstPlayerConnectionId;
 
     private readonly string _secondPlayerConnectionId;
-
-    // private readonly GridSize _gridSize;
 
     private readonly GameController _gameController;
 

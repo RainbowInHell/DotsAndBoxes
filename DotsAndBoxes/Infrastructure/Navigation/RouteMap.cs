@@ -1,7 +1,6 @@
 ﻿using System.Collections.ObjectModel;
-using DotsAndBoxes.Attributes;
 
-namespace DotsAndBoxes.Navigation;
+namespace DotsAndBoxes;
 
 public class RouteMap<T> where T : class, INavigable
 {

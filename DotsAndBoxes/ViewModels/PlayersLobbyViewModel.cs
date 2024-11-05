@@ -3,15 +3,10 @@ using System.Windows.Input;
 using AsyncAwaitBestPractices;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using DotsAndBoxes.Attributes;
-using DotsAndBoxes.Navigation;
-using DotsAndBoxes.SelectableItems;
-using DotsAndBoxes.SignalR;
-using DotsAndBoxesServerAPI.Models;
-using DotsAndBoxesServerAPI.Refit;
+using DotsAndBoxesServerAPI;
 using DotsAndBoxesUIComponents;
 
-namespace DotsAndBoxes.ViewModels;
+namespace DotsAndBoxes;
 
 [Route(Routes.PlayersLobby)]
 public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
@@ -25,7 +20,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
     #region FieldsWithObservableProperties
 
     [ObservableProperty]
-    private GridToPlayType _selectedGridType = GridToPlayType.Default;
+    private GridType _selectedGridType = GridType.Default;
 
     [ObservableProperty]
     private GridSize _selectedGridSize = GridSize.ThreeToThree;
@@ -92,7 +87,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
     public ObservableCollection<PlayerSelectableItem> Players { get; private set; } = [];
 
-    public ObservableCollection<GridToPlayType> GridTypes { get; } = [GridToPlayType.Default];
+    public ObservableCollection<GridType> GridTypes { get; } = [GridType.Default];
 
     public ObservableCollection<GridSize> GridSizes { get; } = [GridSize.ThreeToThree, GridSize.FiveToFive, GridSize.SixToSix];
 
@@ -168,7 +163,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
             var newSettings = new SettingsHolder
             {
                 DoNotDisturb = DoNotDisturb,
-                GridToPlayType = SelectedGridType,
+                GridType = SelectedGridType,
                 GridSize = SelectedGridSize
             };
 
@@ -260,7 +255,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         }
 
         playerToUpdate.Status = updatedPlayer.Status;
-        playerToUpdate.PreferredGridType = updatedPlayer.Settings.GridToPlayType;
+        playerToUpdate.PreferredGridType = updatedPlayer.Settings.GridType;
         playerToUpdate.PreferredGridSize = updatedPlayer.Settings.GridSize;
     }
 

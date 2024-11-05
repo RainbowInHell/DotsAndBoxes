@@ -1,4 +1,4 @@
-﻿namespace DotsAndBoxes.Navigation;
+﻿namespace DotsAndBoxes;
 
 public interface INavigationService<out T> where T : class, INavigable
 {

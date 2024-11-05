@@ -1,6 +1,6 @@
 ﻿using System.Windows.Controls;
 
-namespace DotsAndBoxes.Views;
+namespace DotsAndBoxes;
 
 public partial class PlayersLobbyView : Page
 {

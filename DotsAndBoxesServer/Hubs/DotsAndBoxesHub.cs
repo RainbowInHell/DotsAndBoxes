@@ -1,8 +1,7 @@
-﻿using DotsAndBoxesServerAPI.Models;
-using DotsAndBoxesServerAPI.SignalR;
+﻿using DotsAndBoxesServerAPI;
 using Microsoft.AspNetCore.SignalR;
 
-namespace DotsAndBoxesServer.Hubs;
+namespace DotsAndBoxesServer;
 
 public class DotsAndBoxesHub : Hub
 {

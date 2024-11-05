@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace DotsAndBoxes.Navigation;
+namespace DotsAndBoxes;
 
-public class NavigationService<T> : INavigationService<T>
-    where T : class, INavigable
+public class NavigationService<T> : INavigationService<T> where T : class, INavigable
 {
     private readonly RouteMap<T> _routeMap;
 
@@ -33,7 +32,7 @@ public class NavigationService<T> : INavigationService<T>
 
     private NavigationResult NavigateInternal(string path, DynamicDictionary parameters = null)
     {
-        var args = new NavigationArgs { Destination = path, Parameters = parameters };
+        var args = new NavigationArgs { Parameters = parameters };
         if (!TryGetViewModelTypeByPath(path, out var viewModelType))
         {
             return BuildUnsuccessfulResult(args);
@@ -59,7 +58,7 @@ public class NavigationService<T> : INavigationService<T>
 
     private async Task<NavigationResult> NavigateInternalAsync(string path, DynamicDictionary parameters = null)
     {
-        var args = new NavigationArgs { Destination = path, Parameters = parameters };
+        var args = new NavigationArgs { Parameters = parameters };
         if (!TryGetViewModelTypeByPath(path, out var viewModelType))
         {
             return BuildUnsuccessfulResult(args);

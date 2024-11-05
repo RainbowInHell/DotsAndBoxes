@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using System.Reflection;
 using System.Windows.Data;
-using DotsAndBoxesServerAPI.Attributes;
+using DotsAndBoxesServerAPI;
 
 namespace DotsAndBoxesUIComponents;
 
@@ -39,7 +39,7 @@ public class EnumToDisplayNameConverter : IValueConverter
     }
 
     private static List<T> GetEnumAttributes<T>(Enum value) where T : Attribute
-    { 
+    {
         var attributes = value.GetType()
             .GetField(value.ToString())?
             .GetCustomAttributes<T>(false)

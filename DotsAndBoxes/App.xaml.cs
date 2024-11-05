@@ -1,11 +1,7 @@
 ﻿using System.Configuration;
 using System.Windows;
 using AsyncAwaitBestPractices;
-using DotsAndBoxes.Extensions;
-using DotsAndBoxes.SignalR;
-using DotsAndBoxes.ViewModels;
-using DotsAndBoxes.Views;
-using DotsAndBoxesServerAPI.Refit;
+using DotsAndBoxesServerAPI;
 using Microsoft.Extensions.DependencyInjection;
 using Refit;
 

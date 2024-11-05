@@ -1,5 +1,4 @@
-﻿using DotsAndBoxesServerAPI.Models;
-using DotsAndBoxesUIComponents.GridElements;
+﻿using DotsAndBoxesServerAPI;
 
 namespace DotsAndBoxesUIComponents;
 
@@ -29,7 +28,9 @@ public static class BoardDrawer
     /// <summary>
     /// Creates a list of points (vertices) that form the intersections on the game grid.
     /// </summary>
-    private static IReadOnlyCollection<DrawablePoint> CreatePointList(int numberOfRows, int numberOfColumns, int distanceBetweenPoints)
+    private static List<DrawablePoint> CreatePointList(int numberOfRows,
+                                                                      int numberOfColumns,
+                                                                      int distanceBetweenPoints)
     {
         var pointList = new List<DrawablePoint>();
 
@@ -50,7 +51,9 @@ public static class BoardDrawer
     /// <summary>
     /// Creates a list of horizontal and vertical lines that form the borders of the squares on the game grid.
     /// </summary>
-    private static IReadOnlyCollection<DrawableLine> CreateLineList(int numberOfRows, int numberOfColumns, int distanceBetweenPoints)
+    private static List<DrawableLine> CreateLineList(int numberOfRows,
+                                                     int numberOfColumns,
+                                                     int distanceBetweenPoints)
     {
         var lineList = new List<DrawableLine>();
 
@@ -80,7 +83,9 @@ public static class BoardDrawer
     /// <summary>
     /// Creates a horizontal line based on its grid position.
     /// </summary>
-    private static DrawableLine CreateHorizontalLine(int positionX, int positionY, int distanceBetweenPoints)
+    private static DrawableLine CreateHorizontalLine(int positionX,
+                                                     int positionY,
+                                                     int distanceBetweenPoints)
     {
         // Calculate where the line should start and end.
         // A horizontal line starts at (`x1`, `y1`) and ends at (`x2`, `y2`), where `y1` and `y2` are the same.
@@ -99,7 +104,9 @@ public static class BoardDrawer
     /// <summary>
     /// Creates a vertical line based on its grid position.
     /// </summary>
-    private static DrawableLine CreateVerticalLine(int positionX, int positionY, int distanceBetweenPoints)
+    private static DrawableLine CreateVerticalLine(int positionX,
+                                                   int positionY,
+                                                   int distanceBetweenPoints)
     {
         // Calculate where the line should start and end.
         // A vertical line starts at (`x1`, `y1`) and ends at (`x2`, `y2`), where `x1` and `x2` are the same.
@@ -118,7 +125,9 @@ public static class BoardDrawer
     /// <summary>
     /// Creates a point based on its grid position, adjusting for its size on the screen.
     /// </summary>
-    private static DrawablePoint CreatePoint(int positionX, int positionY, int distanceBetweenPoints)
+    private static DrawablePoint CreatePoint(int positionX,
+                                             int positionY,
+                                             int distanceBetweenPoints)
     {
         // Calculate where the point should be placed on the screen.
         // Adjust the coordinates so that the point appears centered around its grid location.

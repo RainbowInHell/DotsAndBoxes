@@ -1,6 +1,6 @@
 ﻿using MaterialDesignThemes.Wpf;
 
-namespace DotsAndBoxes.SelectableItems;
+namespace DotsAndBoxes;
 
 public class GameTypeSelectableItem
 {

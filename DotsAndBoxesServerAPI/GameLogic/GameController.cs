@@ -1,6 +1,4 @@
-﻿using DotsAndBoxesServerAPI.Models;
-
-namespace DotsAndBoxesServerAPI;
+﻿namespace DotsAndBoxesServerAPI;
 
 /// <summary>
 /// The GameController class is responsible for managing the game state of the "Dots and Boxes" game.

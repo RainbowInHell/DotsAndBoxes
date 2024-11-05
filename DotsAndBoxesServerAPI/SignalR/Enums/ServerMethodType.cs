@@ -1,17 +1,15 @@
-﻿namespace DotsAndBoxesServerAPI.SignalR
+﻿namespace DotsAndBoxesServerAPI;
+
+public enum ServerMethodType
 {
-    public enum ServerMethodType
-    {
-        PlayerConnect,
-        PlayerDisconnect,
-        PlayerUpdateSettings,
+    PlayerConnect,
+    PlayerDisconnect,
+    PlayerUpdateSettings,
 
-        PlayerSendChallenge,
-        PlayerCancelChallenge,
-        PlayerSendChallengeAnswer,
+    PlayerSendChallenge,
+    PlayerCancelChallenge,
+    PlayerSendChallengeAnswer,
 
-        OpponentMakeMove,
-        OpponentLeaveGame,
-        // OpponentWinGame
-    }
+    OpponentMakeMove,
+    OpponentLeaveGame
 }

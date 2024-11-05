@@ -1,9 +1,7 @@
 ﻿using System.Reflection;
-using DotsAndBoxes.Navigation;
-using DotsAndBoxes.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DotsAndBoxes.Extensions;
+namespace DotsAndBoxes;
 
 public static class ServiceCollectionExtensions
 {

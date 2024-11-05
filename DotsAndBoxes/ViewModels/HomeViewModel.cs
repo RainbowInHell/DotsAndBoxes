@@ -3,18 +3,13 @@ using System.Net.Http;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using DotsAndBoxes.Attributes;
-using DotsAndBoxes.Navigation;
-using DotsAndBoxes.SelectableItems;
-using DotsAndBoxes.SignalR;
-using DotsAndBoxesServerAPI.Models;
 using DotsAndBoxesUIComponents;
-using DotsAndBoxesServerAPI.Refit;
+using DotsAndBoxesServerAPI;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Extensions.Logging;
 using MessageBox = DotsAndBoxesUIComponents.MessageBox;
 
-namespace DotsAndBoxes.ViewModels;
+namespace DotsAndBoxes;
 
 [Route(Routes.Home)]
 public sealed partial class HomeViewModel : BaseViewModel

@@ -1,6 +1,6 @@
 ﻿using System.Windows.Media;
 using DotsAndBoxesServerAPI;
-using DotsAndBoxesUIComponents.GridElements;
+using DotsAndBoxesUIComponents;
 
 namespace DotsAndBoxes;
 
@@ -19,9 +19,6 @@ public class AiPlayer
         _random = new Random();
     }
 
-    /// <summary>
-    /// Makes a move for the AI by selecting a random unclicked line and returns the points gained (0 or 1).
-    /// </summary>
     public int MakeMove(IReadOnlyCollection<DrawableLine> lines)
     {
         var lineToClick = FindRandomAvailableMove(lines);
@@ -34,15 +31,11 @@ public class AiPlayer
         return _gameController.MakeMove(lineToClick.StartPoint.X, lineToClick.StartPoint.Y, lineToClick.EndPoint.X, lineToClick.EndPoint.Y);
     }
 
-    /// <summary>
-    /// Finds a random unclicked line for the AI to select as its move.
-    /// </summary>
     private DrawableLine FindRandomAvailableMove(IReadOnlyCollection<DrawableLine> lines)
     {
-        // Get a list of unclicked lines.
         var availableLines = lines.Where(line => !line.IsClicked).ToList();
-
-        // Select a random unclicked line if available.
-        return availableLines.Count != 0 ? availableLines[_random.Next(availableLines.Count)] : null;
+        return availableLines.Count != 0
+                   ? availableLines[_random.Next(availableLines.Count)]
+                   : null;
     }
 }

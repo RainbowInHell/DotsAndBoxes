@@ -1,26 +1,25 @@
-﻿<Window x:Class="DotsAndBoxes.Views.MainWindow"
+﻿<Window x:Class="DotsAndBoxes.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:vms="clr-namespace:DotsAndBoxes.ViewModels"
-        xmlns:views="clr-namespace:DotsAndBoxes.Views"
+        xmlns:DotsAndBoxes="clr-namespace:DotsAndBoxes"
         mc:Ignorable="d"
-        d:DataContext="{d:DesignInstance Type={x:Type vms:MainViewModel}}"
+        d:DataContext="{d:DesignInstance Type={x:Type DotsAndBoxes:MainViewModel}}"
         ResizeMode="CanMinimize"
         SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner"
         Title="{Binding CurrentViewModel.ViewModelTitle}">
     <Frame NavigationUIVisibility="Hidden" Content="{Binding CurrentViewModel}">
         <Frame.Resources>
-            <DataTemplate DataType="{x:Type vms:HomeViewModel}">
-                <views:HomeView />
+            <DataTemplate DataType="{x:Type DotsAndBoxes:HomeViewModel}">
+                <DotsAndBoxes:HomeView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type vms:PlayersLobbyViewModel}">
-                <views:PlayersLobbyView />
+            <DataTemplate DataType="{x:Type DotsAndBoxes:PlayersLobbyViewModel}">
+                <DotsAndBoxes:PlayersLobbyView />
             </DataTemplate>
-            <DataTemplate DataType="{x:Type vms:GameViewModel}">
-                <views:GameView />
+            <DataTemplate DataType="{x:Type DotsAndBoxes:GameViewModel}">
+                <DotsAndBoxes:GameView />
             </DataTemplate>
         </Frame.Resources>
     </Frame>

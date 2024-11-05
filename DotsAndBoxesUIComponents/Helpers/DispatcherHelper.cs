@@ -1,12 +1,9 @@
 ﻿using System.Windows;
-using System.Windows.Threading;
 
 namespace DotsAndBoxesUIComponents;
 
 public static class DispatcherHelper
 {
-    internal static bool IsDebugMode { get; set; } = false;
-
     public static void InvokeMethodInCorrectThread(Action method)
     {
         if (method == null)
@@ -14,7 +11,7 @@ public static class DispatcherHelper
             return;
         }
 
-        if (Application.Current != null && Application.Current.Dispatcher != null && !Application.Current.Dispatcher.CheckAccess() && !IsDebugMode)
+        if (Application.Current != null && Application.Current.Dispatcher != null && !Application.Current.Dispatcher.CheckAccess())
         {
             Application.Current.Dispatcher.Invoke(method);
         }
@@ -39,28 +36,5 @@ public static class DispatcherHelper
         {
             method.Invoke();
         }
-    }
-
-    /// <summary>
-    /// Уход в поток закрепленный за диспатчером.
-    /// <example>
-    /// await AsyncHelper.RedirectTo(dispatcher);
-    /// </example>
-    /// </summary>
-    public static DispatcherRedirector RedirectTo(Dispatcher d)
-    {
-        return new DispatcherRedirector(d);
-    }
-
-    /// <summary>
-    /// Уход в главный поток.
-    /// После вызова произойдет переход в главный ГУИ-поток.
-    /// <example>
-    /// await DispatcherHelper.RedirectToGuiThread();
-    /// </example>
-    /// </summary>
-    public static DispatcherRedirector RedirectToGuiThread()
-    {
-        return RedirectTo(Application.Current?.Dispatcher);
     }
 }

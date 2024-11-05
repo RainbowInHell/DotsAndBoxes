@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace DotsAndBoxes.Views;
+namespace DotsAndBoxes;
 
 public partial class MainWindow : Window
 {

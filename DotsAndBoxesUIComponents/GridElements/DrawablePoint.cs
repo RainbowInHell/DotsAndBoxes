@@ -1,4 +1,4 @@
-﻿namespace DotsAndBoxesUIComponents.GridElements;
+﻿namespace DotsAndBoxesUIComponents;
 
 public readonly struct DrawablePoint
 {

@@ -1,7 +1,4 @@
 using DotsAndBoxesServer;
-using DotsAndBoxesServer.HubFilters;
-using DotsAndBoxesServer.Hubs;
-using Microsoft.AspNetCore.SignalR;
 using NReco.Logging.File;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,7 +15,6 @@ builder.Services.AddSingleton<PlayersManager>();
 builder.Services.AddSignalR(hubOptions =>
                                 {
                                     hubOptions.EnableDetailedErrors = true;
-                                    hubOptions.AddFilter<HubFilter>();
                                 });
 
 var app = builder.Build();

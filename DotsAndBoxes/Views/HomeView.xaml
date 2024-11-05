@@ -1,13 +1,12 @@
-﻿<Page x:Class="DotsAndBoxes.Views.HomeView"
+﻿<Page x:Class="DotsAndBoxes.HomeView"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-      xmlns:vms="clr-namespace:DotsAndBoxes.ViewModels"
-      xmlns:SelectableItems="clr-namespace:DotsAndBoxes.SelectableItems"
-      xmlns:Models="clr-namespace:DotsAndBoxesServerAPI.Models;assembly=DotsAndBoxesServerAPI"
-      d:DataContext="{d:DesignInstance Type={x:Type vms:HomeViewModel}}"
+      xmlns:DotsAndBoxes="clr-namespace:DotsAndBoxes"
+      xmlns:DotsAndBoxesServerApi="clr-namespace:DotsAndBoxesServerAPI;assembly=DotsAndBoxesServerAPI"
+      d:DataContext="{d:DesignInstance Type={x:Type DotsAndBoxes:HomeViewModel}}"
       mc:Ignorable="d" Height="400">
     <Grid>
         <Grid IsEnabled="{Binding IsLoading,
@@ -22,7 +21,7 @@
                     BorderThickness="5"
                     CornerRadius="4">
                 <Border.Background>
-                    <ImageBrush ImageSource="../Images/DotsAndBoxesRules.png" Stretch="UniformToFill" />
+                    <ImageBrush ImageSource="../Infrastructure/Images/DotsAndBoxesRules.png" Stretch="UniformToFill" />
                 </Border.Background>
             </Border>
 
@@ -42,7 +41,7 @@
                               ItemsSource="{Binding GameTypes, UpdateSourceTrigger=PropertyChanged, Mode=OneWay}"
                               SelectedItem="{Binding SelectedGameTypeItem, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}">
                         <ComboBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type SelectableItems:GameTypeSelectableItem}">
+                            <DataTemplate DataType="{x:Type DotsAndBoxes:GameTypeSelectableItem}">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="{Binding Icon}" Margin="0,0,5,0" />
                                     <TextBlock Text="{Binding Name}" />
@@ -69,7 +68,7 @@
                               ItemsSource="{Binding GridSizes}"
                               SelectedItem="{Binding SelectedGridSize}">
                         <ComboBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type Models:GridSize}">
+                            <DataTemplate DataType="{x:Type DotsAndBoxesServerApi:GridSize}">
                                 <TextBlock Text="{Binding ., Converter={StaticResource enumToDisplayNameConverter}}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>

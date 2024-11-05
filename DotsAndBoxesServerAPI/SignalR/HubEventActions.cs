@@ -1,4 +1,4 @@
-﻿namespace DotsAndBoxesServerAPI.SignalR;
+﻿namespace DotsAndBoxesServerAPI;
 
 public static class HubEventActions
 {

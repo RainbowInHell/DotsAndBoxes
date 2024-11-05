@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using DotsAndBoxesServerAPI.Models;
+using DotsAndBoxesServerAPI;
 
 namespace DotsAndBoxesServer;
 

@@ -1,4 +1,4 @@
-﻿namespace DotsAndBoxes.Attributes;
+﻿namespace DotsAndBoxes;
 
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public class RouteAttribute(string route) : Attribute

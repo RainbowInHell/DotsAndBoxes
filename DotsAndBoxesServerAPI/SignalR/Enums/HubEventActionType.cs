@@ -1,20 +1,19 @@
-﻿namespace DotsAndBoxesServerAPI.SignalR
+﻿namespace DotsAndBoxesServerAPI;
+
+public enum HubEventActionType
 {
-    public enum HubEventActionType
-    {
-        OnPlayerConnect,
-        OnPlayerDisconnect,
-        OnPlayerUpdateSettings,
-        OnPlayerChangeStatus,
+    OnPlayerConnect,
+    OnPlayerDisconnect,
+    OnPlayerUpdateSettings,
+    OnPlayerChangeStatus,
 
-        OnChallenge,
-        OnChallengeCancel,
-        OnChallengeReject,
-        OnChallengeAccept,
+    OnChallenge,
+    OnChallengeCancel,
+    OnChallengeReject,
+    OnChallengeAccept,
 
-        OnOpponentMakeMove,
-        OnGainPoints,
-        OnGameEnd,
-        OnOpponentLeaveGame
-    }
+    OnOpponentMakeMove,
+    OnGainPoints,
+    OnGameEnd,
+    OnOpponentLeaveGame
 }

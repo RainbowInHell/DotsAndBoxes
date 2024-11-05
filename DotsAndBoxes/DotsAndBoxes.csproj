@@ -22,11 +22,15 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Resource Include="Images\DotsAndBoxesRules.png" />
+      <ProjectReference Include="..\DotsAndBoxesUIComponents\DotsAndBoxesUIComponents.csproj" />
+      <ProjectReference Include="..\DotsAndBoxesServerAPI\DotsAndBoxesServerAPI.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DotsAndBoxesUIComponents\DotsAndBoxesUIComponents.csproj" />
-      <ProjectReference Include="..\DotsAndBoxesServerAPI\DotsAndBoxesServerAPI.csproj" />
+      <Folder Include="Infrastructure\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Resource Include="Infrastructure\Images\DotsAndBoxesRules.png" />
     </ItemGroup>
 </Project>

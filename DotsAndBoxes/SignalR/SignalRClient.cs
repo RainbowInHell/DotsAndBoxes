@@ -1,11 +1,10 @@
 ﻿using System.Configuration;
 using AsyncAwaitBestPractices;
-using DotsAndBoxesServerAPI.Models;
-using DotsAndBoxesServerAPI.SignalR;
+using DotsAndBoxesServerAPI;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Logging;
 
-namespace DotsAndBoxes.SignalR;
+namespace DotsAndBoxes;
 
 public sealed class SignalRClient : IAsyncDisposable
 {

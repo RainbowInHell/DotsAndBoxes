@@ -1,6 +1,4 @@
-﻿using DotsAndBoxesServerAPI.Attributes;
-
-namespace DotsAndBoxesServerAPI.Models;
+﻿namespace DotsAndBoxesServerAPI;
 
 public enum PlayerStatus
 {

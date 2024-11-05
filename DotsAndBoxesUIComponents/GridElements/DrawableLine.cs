@@ -1,7 +1,7 @@
 ﻿using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace DotsAndBoxesUIComponents.GridElements;
+namespace DotsAndBoxesUIComponents;
 
 public partial class DrawableLine : ObservableObject
 {

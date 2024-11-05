@@ -1,4 +1,4 @@
-﻿namespace DotsAndBoxes.Navigation;
+﻿namespace DotsAndBoxes;
 
 public class DynamicDictionary
 {

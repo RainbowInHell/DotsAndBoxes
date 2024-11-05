@@ -1,4 +1,4 @@
-﻿namespace DotsAndBoxesServerAPI.Models;
+﻿namespace DotsAndBoxesServerAPI;
 
 public class Player
 {

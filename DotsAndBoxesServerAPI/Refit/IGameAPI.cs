@@ -1,7 +1,6 @@
-﻿using DotsAndBoxesServerAPI.Models;
-using Refit;
+﻿using Refit;
 
-namespace DotsAndBoxesServerAPI.Refit;
+namespace DotsAndBoxesServerAPI;
 
 public interface IGameAPI
 {

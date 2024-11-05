@@ -1,7 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using DotsAndBoxesServerAPI.Models;
+using DotsAndBoxesServerAPI;
 
-namespace DotsAndBoxes.SelectableItems;
+namespace DotsAndBoxes;
 
 public partial class PlayerSelectableItem : ObservableObject
 {
@@ -12,7 +12,7 @@ public partial class PlayerSelectableItem : ObservableObject
     private PlayerStatus _status;
 
     [ObservableProperty]
-    private GridToPlayType _preferredGridType;
+    private GridType _preferredGridType;
 
     [ObservableProperty]
     private GridSize _preferredGridSize;
@@ -27,10 +27,10 @@ public partial class PlayerSelectableItem : ObservableObject
     {
         Name = player.Name;
         Status = player.Status;
-        PreferredGridType = GridToPlayType.Default;
+        PreferredGridType = GridType.Default;
         PreferredGridSize = GridSize.FiveToFive;
     }
-
+    
     partial void OnStatusChanged(PlayerStatus value)
     {
         CanBeChallenged = value == PlayerStatus.Challenged && WasChallenged || value == PlayerStatus.FreeToPlay;

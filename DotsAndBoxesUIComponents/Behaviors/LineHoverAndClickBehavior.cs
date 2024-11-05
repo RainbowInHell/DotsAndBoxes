@@ -2,10 +2,9 @@
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using DotsAndBoxesUIComponents.GridElements;
 using Microsoft.Xaml.Behaviors;
 
-namespace DotsAndBoxesUIComponents.Behaviors;
+namespace DotsAndBoxesUIComponents;
 
 public class LineHoverAndClickBehavior : Behavior<Line>
 {

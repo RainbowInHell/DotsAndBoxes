@@ -4,16 +4,11 @@ using System.Windows.Media;
 using AsyncAwaitBestPractices;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using DotsAndBoxes.Attributes;
-using DotsAndBoxes.Navigation;
-using DotsAndBoxes.SignalR;
 using DotsAndBoxesServerAPI;
-using DotsAndBoxesServerAPI.Models;
 using DotsAndBoxesUIComponents;
-using DotsAndBoxesUIComponents.GridElements;
 using MessageBox = DotsAndBoxesUIComponents.MessageBox;
 
-namespace DotsAndBoxes.ViewModels;
+namespace DotsAndBoxes;
 
 [Route(Routes.Game)]
 public sealed partial class GameViewModel : BaseViewModel, IDisposable
