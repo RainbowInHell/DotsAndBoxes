@@ -146,7 +146,7 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
     {
         DispatcherHelper.InvokeMethodInCorrectThread(() =>
                                                          {
-                                                             MessageBox.Show("Соединение с сервером потеряно.\nТекущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Warning);
+                                                             _ = MessageBox.Show("Соединение с сервером потеряно.\nТекущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Warning);
                                                          });
 
         _signalRClient.StopConnectionAsync().SafeFireAndForget();
@@ -181,7 +181,7 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
     {
         await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
                                                                     {
-                                                                        MessageBox.Show("Соперник покинул игру. Текущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Information);
+                                                                        _ = MessageBox.Show("Соперник покинул игру. Текущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Information);
                                                                     });
         await _navigationService.NavigateAsync(Routes.PlayersLobby, new DynamicDictionary(("FirstPlayerName", FirstPlayerName))).ConfigureAwait(false);
     }
@@ -190,7 +190,7 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
     {
         await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
                                                                     {
-                                                                        MessageBox.Show("Игра окончена!", MsgBoxButton.OK, MsgBoxImage.Information);
+                                                                        _ = MessageBox.Show("Игра окончена!", MsgBoxButton.OK, MsgBoxImage.Information);
                                                                     });
 
         if (_isAgainstAi)

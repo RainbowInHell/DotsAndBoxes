@@ -129,7 +129,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         {
             if (!challengedPlayer.WasChallenged && Players.Any(x => x.WasChallenged))
             {
-                _ = MessageBox.Show("Дождитесь ответа на предыдущее приглашение, либо отклоните его, чтобы отправить другое.");
+                _ = MessageBox.Show("Дождитесь ответа на предыдущее приглашение, либо отклоните его, чтобы отправить другое.", MsgBoxButton.OK, MsgBoxImage.Warning);
                 return;
             }
 
@@ -357,7 +357,7 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         ConnectionIsLost = false;
         DispatcherHelper.InvokeMethodInCorrectThread(() =>
                                                          {
-                                                             MessageBox.Show("Не удалось восстановить подключение к серверу.\nТекущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Warning);
+                                                             _ = MessageBox.Show("Не удалось восстановить подключение к серверу.\nТекущая сессия будет завершена.", MsgBoxButton.OK, MsgBoxImage.Warning);
                                                          });
 
         _navigationService.Navigate(Routes.Home);
