@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Drawing;
 using System.Windows.Input;
 using System.Windows.Media;
 using AsyncAwaitBestPractices;
@@ -6,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DotsAndBoxesServerAPI;
 using DotsAndBoxesUIComponents;
+using Microsoft.Extensions.Logging;
 using MessageBox = DotsAndBoxesUIComponents.MessageBox;
 
 namespace DotsAndBoxes;
@@ -31,6 +33,8 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     private readonly INavigationService<BaseViewModel> _navigationService;
 
+    private readonly ILogger<GameViewModel> _logger;
+
     #region FieldsWithObservableProperties
 
     [ObservableProperty]
@@ -46,12 +50,15 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     #endregion
 
-    public GameViewModel(SignalRClient signalRClient, INavigationService<BaseViewModel> navigationService)
+    public GameViewModel(SignalRClient signalRClient,
+                         INavigationService<BaseViewModel> navigationService,
+                         ILogger<GameViewModel> logger)
     {
         ViewModelTitle = "Игра";
 
         _signalRClient = signalRClient;
         _navigationService = navigationService;
+        _logger = logger;
 
         ClickLineCommand = new AsyncRelayCommand<DrawableLine>(ClickLineCommandExecuteAsync, ClickLineCommandCanExecute);
         LeaveGameCommand = new AsyncRelayCommand(LeaveGameCommandExecuteAsync);
@@ -61,7 +68,7 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     public ObservableCollection<DrawableLine> Lines { get; private set; }
 
-    public ObservableCollection<DrawablePoint> Dots { get; private set; }
+    public ObservableCollection<Point> Dots { get; private set; }
 
     public string FirstPlayerName { get; private set; }
 
@@ -81,14 +88,13 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     public override NavigationResult OnNavigatedTo(NavigationArgs args)
     {
-        var selectedGridSize = args.Parameters.GetValue<GridSize>("GridSize");
+        var selectedGridSize = args.Parameters.GetValue<GridSize>(nameof(GridSize));
         var pointsAndLinesTuple = BoardDrawer.DrawBoard(selectedGridSize);
         Lines = new(pointsAndLinesTuple.lineList);
         Dots = new(pointsAndLinesTuple.pointList);
 
         FirstPlayerName = args.Parameters.GetValue<string>(nameof(FirstPlayerName));
         SecondPlayerName = args.Parameters.GetValue<string>(nameof(SecondPlayerName));
-        CanMakeMove = args.Parameters.GetValue<bool>("CanMakeMove");
 
         if (SecondPlayerName == "Компьютер")
         {
@@ -114,15 +120,26 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     private async Task ClickLineCommandExecuteAsync(DrawableLine line)
     {
-        line.Color = _firstPlayerColor;
+        try
+        {
+            line.Color = _firstPlayerColor;
 
-        if (_isAgainstAi)
-        {
-            await ProcessAiLogicAsync(line).ConfigureAwait(false);
+            if (_isAgainstAi)
+            {
+                await ProcessAiLogicAsync(line).ConfigureAwait(false);
+            }
+            else
+            {
+                await _signalRClient.MakeMoveAsync(_lobbyId, line.X1, line.Y1, line.X2, line.Y2);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            await _signalRClient.MakeMoveAsync(_lobbyId, line.StartPoint.X, line.StartPoint.Y, line.EndPoint.X, line.EndPoint.Y);
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't make move due to an error: ", ex);
+            await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
+                                                                        {
+                                                                            _ = MessageBox.Show("Не удалось совершить ход.", MsgBoxButton.OK, MsgBoxImage.Error);
+                                                                        });
         }
     }
 
@@ -133,9 +150,23 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     private async Task LeaveGameCommandExecuteAsync()
     {
-        await _signalRClient.LeaveGameAsync().ConfigureAwait(false);
-        await _navigationService.NavigateAsync(Routes.PlayersLobby,
-                                               new DynamicDictionary(("FirstPlayerName", FirstPlayerName))).ConfigureAwait(false);
+        if (_isAgainstAi)
+        {
+            _navigationService.Navigate(Routes.Home);
+            return;
+        }
+
+        try
+        {
+            await _signalRClient.LeaveGameAsync().ConfigureAwait(false);
+            await _navigationService.NavigateAsync(Routes.PlayersLobby,
+                                                   new DynamicDictionary(("FirstPlayerName", FirstPlayerName))).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't leave game due to an error: ", ex);
+            _navigationService.Navigate(Routes.Home);
+        }
     }
 
     #endregion
@@ -159,7 +190,7 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     private void OnOpponentMakeMove(int x1, int y1, int x2, int y2, int opponentPlayerScore)
     {
-        var line = Lines.First(x => x.StartPoint.X == x1 && x.StartPoint.Y == y1 && x.EndPoint.X == x2 && x.EndPoint.Y == y2);
+        var line = Lines.First(x => x.X1 == x1 && x.Y1 == y1 && x.X2 == x2 && x.Y2 == y2);
         line.Color = _secondPlayerColor;
 
         OpponentPlayerScore += opponentPlayerScore;
@@ -168,8 +199,8 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     private void OnGainPoints(int gainPoints)
     {
-        CurrentPlayerScore += gainPoints;
         CanMakeMove = gainPoints > 0;
+        CurrentPlayerScore += gainPoints;
     }
 
     private async Task OnGameEndAsync()
@@ -209,9 +240,9 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     private async Task ProcessAiLogicAsync(DrawableLine line)
     {
-        var points = _gameController.MakeMove(line.StartPoint.X, line.StartPoint.Y, line.EndPoint.X, line.EndPoint.Y);
-        CanMakeMove = points > 0;
-        CurrentPlayerScore += points;
+        var gainPoints = _gameController.MakeMove(line.X1, line.Y1, line.Y2);
+        CanMakeMove = gainPoints > 0;
+        CurrentPlayerScore += gainPoints;
 
         if (!CanMakeMove)
         {
@@ -226,17 +257,15 @@ public sealed partial class GameViewModel : BaseViewModel, IDisposable
 
     private async Task ExecuteAiTurnAsync()
     {
-        int pointsGained;
+        int gainPoints;
         do
         {
-            pointsGained = _aiPlayer.MakeMove(Lines);
-            OpponentPlayerScore += pointsGained;
+            await Task.Delay(2000).ConfigureAwait(false);
+
+            gainPoints = _aiPlayer.MakeMove(Lines);
+            OpponentPlayerScore += gainPoints;
     
-            if (pointsGained > 0 && !_gameController.IsGameEnded())
-            {
-                await Task.Delay(2000).ConfigureAwait(false);
-            }
-        } while (pointsGained > 0);
+        } while (gainPoints > 0 && !_gameController.IsGameEnded());
     
         CanMakeMove = true;
     }

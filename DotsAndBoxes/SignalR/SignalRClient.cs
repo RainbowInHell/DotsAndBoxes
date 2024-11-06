@@ -30,11 +30,8 @@ public sealed class SignalRClient : IAsyncDisposable
     #region ChallengeEvents
 
     public event Action<string> OnChallenge;
-
     public event Action OnChallengeCancel;
-
     public event Action OnChallengeReject;
-
     public event Action<string> OnChallengeAccept;
 
     #endregion
@@ -51,9 +48,7 @@ public sealed class SignalRClient : IAsyncDisposable
     #region ConnectionEvents
 
     public event Action OnConnectionLost;
-
     public event Action OnConnectionRestored;
-
     public event Action<long> OnReconnectAttempt;
 
     #endregion
@@ -137,93 +132,37 @@ public sealed class SignalRClient : IAsyncDisposable
 
     public async Task SendNewPlayerConnectAsync(Player player)
     {
-        try
-        {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerConnect), player);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Can't send notification about new player due to an error: {ex}", ex);
-            throw;
-        }
+        await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerConnect), player);
     }
 
     public async Task SendPlayerUpdateSettingsAsync(SettingsHolder newSettings)
     {
-        try
-        {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerUpdateSettings), newSettings);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Can't send updated player's settings due to an error: {ex}", ex);
-            throw;
-        }
+        await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerUpdateSettings), newSettings);
     }
 
     public async Task SendChallengeAsync(string challengedPlayerName)
     {
-        try
-        {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerSendChallenge), challengedPlayerName);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Can't send challenge due to an error: {ex}", ex);
-            throw;
-        }
+        await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerSendChallenge), challengedPlayerName);
     }
 
     public async Task SendChallengeAnswerAsync(bool challengeAccepted, string challengeSenderName)
     {
-        try
-        {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerSendChallengeAnswer), challengeAccepted, challengeSenderName);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Can't send challenge answer due to an error: {ex}", ex);
-            throw;
-        }
+        await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerSendChallengeAnswer), challengeAccepted, challengeSenderName);
     }
 
     public async Task UndoChallengeAsync(string challengedPlayerName)
     {
-        try
-        {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerCancelChallenge), challengedPlayerName);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Can't undo challenge due to an error: {ex}", ex);
-            throw;
-        }
+        await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.PlayerCancelChallenge), challengedPlayerName);
     }
 
     public async Task MakeMoveAsync(string lobbyId, int x1, int y1, int x2, int y2)
     {
-        try
-        {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.OpponentMakeMove), lobbyId, x1, y1, x2, y2);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Can't make move due to an error: {ex}", ex);
-            throw;
-        }
+        await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.OpponentMakeMove), lobbyId, x1, y1, x2, y2);
     }
 
     public async Task LeaveGameAsync()
     {
-        try
-        {
-            await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.OpponentLeaveGame));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Can't leave game due to an error: {ex}", ex);
-            throw;
-        }
+        await _hubConnection.SendAsync(ServerMethods.GetServerMethodName(ServerMethodType.OpponentLeaveGame));
     }
 
     #endregion
@@ -235,11 +174,11 @@ public sealed class SignalRClient : IAsyncDisposable
         try
         {
             await _hubConnection.StartAsync();
-            // _logger.LogInformation("Hub connection started successfully.");
+            _logger.LogWithCallerInfo(LogLevel.Information, "Hub connection started successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError("Can't start connection due to an error: {ex}", ex);
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't start connection due to an error: ", ex);
             throw;
         }
     }
@@ -249,37 +188,27 @@ public sealed class SignalRClient : IAsyncDisposable
         try
         {
             await _hubConnection.StopAsync();
-            // _logger.LogInformation("Hub connection started successfully.");
+            _logger.LogWithCallerInfo(LogLevel.Information, "Hub connection stopped successfully.");
         }
         catch (Exception ex)
         {
-            _logger.LogError("Can't stop connection due to an error: {ex}", ex);
-            throw;
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't stop connection due to an error: ", ex);
         }
     }
 
-    private async Task OnReconnecting(Exception exception)
+    private Task OnReconnecting(Exception exception)
     {
-        _logger.LogError("OnReconnecting exception: {exception}", exception);
-        // await _hubConnection.StopAsync().ConfigureAwait(false);
-
+        _logger.LogWithCallerInfo(LogLevel.Error, "OnReconnecting exception: ", exception);
         OnConnectionLost?.Invoke();
-        // return Task.CompletedTask;
-    }
 
-    private void OnRetryPolicyAttempt(long attemptNumber)
-    {
-        OnReconnectAttempt?.Invoke(attemptNumber);
-
-        if (attemptNumber == MaxReconnectAttempts)
-        {
-            _hubConnection.StopAsync().SafeFireAndForget(onException: ex => _logger.LogError("Failed to reconnect after {attempts} attempts due to an error: {ex}.", MaxReconnectAttempts, ex));
-        }
+        return Task.CompletedTask;
     }
 
     private Task OnReconnected(string connectionId)
     {
+        _logger.LogWithCallerInfo(LogLevel.Warning, "Gracefully reconnected to the server.");
         OnConnectionRestored?.Invoke();
+
         return Task.CompletedTask;
     }
 
@@ -287,14 +216,27 @@ public sealed class SignalRClient : IAsyncDisposable
     {
         if (exception is not null)
         {
-            _logger.LogError("Connection closed due to an error: {ex}", exception);
+            _logger.LogWithCallerInfo(LogLevel.Error, "Connection closed due to an error: ", exception);
         }
         else
         {
-            _logger.LogWarning("Connection closed gracefully.");
+            _logger.LogWithCallerInfo(LogLevel.Warning, "Connection closed gracefully.");
         }
 
         return Task.CompletedTask;
+    }
+
+    private void OnRetryPolicyAttempt(long attemptNumber)
+    {
+        OnReconnectAttempt?.Invoke(attemptNumber);
+
+        if (attemptNumber != MaxReconnectAttempts)
+        {
+            return;
+        }
+
+        _logger.LogWithCallerInfo(LogLevel.Warning, $"Failed to reconnect after {MaxReconnectAttempts} attempts.");
+        StopConnectionAsync().SafeFireAndForget();
     }
 
     #endregion
@@ -308,6 +250,7 @@ public sealed class SignalRClient : IAsyncDisposable
 
         _customRetryPolicy.OnRetry -= OnRetryPolicyAttempt;
         _hubConnection.Closed -= OnConnectionClosed;
+
         await _hubConnection.DisposeAsync();
     }
 

@@ -3,13 +3,11 @@ using DotsAndBoxesServerAPI;
 
 namespace DotsAndBoxesServer;
 
-public class PlayersManager
+public class GameManager
 {
     private readonly ConcurrentDictionary<string, Player> _connectionIdToPlayer = new();
 
-    private readonly ConcurrentDictionary<string, string> _playerToOpponent = new();
-
-    private readonly List<GameLobby> _gameLobbies = new();
+    private readonly List<GameLobby> _gameLobbies = [];
 
     public void AddPlayer(string connectionId, Player player)
     {
@@ -19,14 +17,33 @@ public class PlayersManager
         }
     }
 
-    public Player RemovePlayer(string connectionId)
+    public Player UpdatePlayer(string connectionId, SettingsHolder newSettings)
     {
+        var playerToUpdate = GetConnectedPlayer(connectionId);
+        playerToUpdate.Status = newSettings.DoNotDisturb
+                                    ? PlayerStatus.DoNotDisturb
+                                    : PlayerStatus.FreeToPlay;
+        playerToUpdate.Settings = newSettings;
+        return playerToUpdate;
+    }
+
+    public (Player player, string opponentConnectionId) RemovePlayer(string connectionId)
+    {
+        string opponentConnectionId = null;
+
         if (!_connectionIdToPlayer.TryRemove(connectionId, out var disconnectedPlayer))
         {
             throw new KeyNotFoundException($"Player with connection id '{connectionId}' not found");
         }
 
-        return disconnectedPlayer;
+        var gameLobby = _gameLobbies.FirstOrDefault(x => x.IsPlayerInLobby(connectionId));
+        if (gameLobby is not null)
+        {
+            opponentConnectionId = gameLobby.GetOpponentConnectionId(connectionId);
+            _gameLobbies.Remove(gameLobby);
+        }
+
+        return (disconnectedPlayer, opponentConnectionId);
     }
 
     public IEnumerable<Player> GetConnectedPlayers()
@@ -49,16 +66,6 @@ public class PlayersManager
         return _connectionIdToPlayer.FirstOrDefault(entry => entry.Value.Name == playerName).Key;
     }
 
-    public Player UpdatePlayer(string connectionId, SettingsHolder newSettings)
-    {
-        var playerToUpdate = GetConnectedPlayer(connectionId);
-        playerToUpdate.Status = newSettings.DoNotDisturb
-                                    ? PlayerStatus.DoNotDisturb
-                                    : PlayerStatus.FreeToPlay;
-        playerToUpdate.Settings = newSettings;
-        return playerToUpdate;
-    }
-
     public string MapOpponents(string firstPlayerConnectionId, string secondPlayerConnectionId, GridSize gridSize)
     {
         var gameLobby = new GameLobby(firstPlayerConnectionId, secondPlayerConnectionId, gridSize);
@@ -69,10 +76,9 @@ public class PlayersManager
 
     public (string opponentConnectionId, int gainPoints, bool isGameEnd) OpponentMakeMove(string lobbyId,
                                                                                           string playerConnectionId,
-                                                                                          int startPointX,
-                                                                                          int startPointY,
-                                                                                          int endPointX,
-                                                                                          int endPointY)
+                                                                                          int x1,
+                                                                                          int y1,
+                                                                                          int y2)
     {
         var gameLobby = _gameLobbies.FirstOrDefault(x => x.Id == lobbyId);
         if (gameLobby is null)
@@ -80,26 +86,25 @@ public class PlayersManager
             throw new InvalidDataException();
         }
 
-        var points = gameLobby.MakeMove(startPointX, startPointY, endPointX, endPointY);
+        var moveTuple = gameLobby.MakeMove(x1, y1, y2);
+        if (moveTuple.isGameEnd)
+        {
+            _gameLobbies.Remove(gameLobby);
+        }
+
         var opponentConnectionId = gameLobby.GetOpponentConnectionId(playerConnectionId);
-        var isGameEnd = gameLobby.IsGameEnded();
-
-        return (opponentConnectionId, points, isGameEnd);
+        return (opponentConnectionId, moveTuple.gainPoints, moveTuple.isGameEnd);
     }
 
-    public string GetOpponentConnectionId(string connectionId)
+    public string RemoveLobby(string playerInLobbyConnectionId)
     {
-        return _playerToOpponent.GetValueOrDefault(connectionId);
-    }
-
-    public void GameEnd(string lobbyId)
-    {
-        var gameLobby = _gameLobbies.FirstOrDefault(x => x.Id == lobbyId);
+        var gameLobby = _gameLobbies.FirstOrDefault(x => x.IsPlayerInLobby(playerInLobbyConnectionId));
         if (gameLobby is null)
         {
             throw new InvalidDataException();
         }
 
         _gameLobbies.Remove(gameLobby);
+        return gameLobby.GetOpponentConnectionId(playerInLobbyConnectionId);
     }
 }

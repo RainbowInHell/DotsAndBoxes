@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DotsAndBoxesServerAPI;
 using DotsAndBoxesUIComponents;
+using Microsoft.Extensions.Logging;
 
 namespace DotsAndBoxes;
 
@@ -51,9 +52,14 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
     private readonly SignalRClient _signalRClient;
 
+    private readonly ILogger<PlayersLobbyViewModel> _logger;
+
     #endregion
 
-    public PlayersLobbyViewModel(INavigationService<BaseViewModel> navigationService, IGameAPI gameAPI, SignalRClient signalRClient)
+    public PlayersLobbyViewModel(INavigationService<BaseViewModel> navigationService,
+                                 IGameAPI gameAPI,
+                                 SignalRClient signalRClient,
+                                 ILogger<PlayersLobbyViewModel> logger)
     {
         ViewModelTitle = "Игровое лобби";
 
@@ -61,10 +67,12 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         UpdateSettingsCommand = new AsyncRelayCommand(SaveSettingsCommandExecuteAsync);
         AcceptChallengeCommand = new AsyncRelayCommand(AcceptChallengeCommandExecuteAsync);
         RejectChallengeCommand = new AsyncRelayCommand(RejectChallengeCommandExecuteAsync);
+        CancelReconnectionCommand = new AsyncRelayCommand(CancelReconnectionCommandExecuteAsync);
 
         _navigationService = navigationService;
         _gameAPI = gameAPI;
         _signalRClient = signalRClient;
+        _logger = logger;
 
         _signalRClient.OnPlayerConnect += OnPlayerConnect;
         _signalRClient.OnPlayerDisconnect += OnPlayerDisconnect;
@@ -103,13 +111,15 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
     public ICommand RejectChallengeCommand { get; }
 
+    public ICommand CancelReconnectionCommand { get; }
+
     #endregion
 
     #region Methods
 
     public override async Task<NavigationResult> OnNavigatedToAsync(NavigationArgs args)
     { 
-        CurrentPlayerName = args.Parameters.GetValue<string>("FirstPlayerName");
+        CurrentPlayerName = args.Parameters.GetValue<string>(nameof(HomeViewModel.FirstPlayerName));
 
         var connectedPlayers = await _gameAPI.GetConnectedPlayers().ConfigureAwait(false);
         await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
@@ -133,7 +143,6 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
                 return;
             }
 
-            // If a challenge has been made, cancel the challenge and vice versa.
             challengedPlayer.WasChallenged = !challengedPlayer.WasChallenged;
 
             if (challengedPlayer.WasChallenged)
@@ -147,8 +156,10 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
                 await _signalRClient.UndoChallengeAsync(challengedPlayer.Name).ConfigureAwait(false);
             }
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't process challenge due to an error: ", ex);
+
             await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
                                                                         {
                                                                             _ = MessageBox.Show("Не удалось отправить запрос на совместную игру.", MsgBoxButton.OK, MsgBoxImage.Error);
@@ -183,6 +194,8 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         }
         catch (Exception ex)
         {
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't save settings due to an error: ", ex);
+
             SettingsUpdateStarted = false;
             await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
                                                                         {
@@ -197,8 +210,10 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
         {
             await _signalRClient.SendChallengeAnswerAsync(true, ChallengeSenderName).ConfigureAwait(false);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't accept challenge due to an error: ", ex);
+
             // Console.WriteLine(e);
             // throw;
         }
@@ -211,11 +226,16 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
             ReceiveChallenge = false;
             await _signalRClient.SendChallengeAnswerAsync(false, ChallengeSenderName).ConfigureAwait(false);
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            // Console.WriteLine(e);
-            // throw;
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't reject challenge answer due to an error: ", ex);
         }
+    }
+
+    private async Task CancelReconnectionCommandExecuteAsync()
+    {
+        await _signalRClient.StopConnectionAsync().ConfigureAwait(false);
+        await _navigationService.NavigateAsync(Routes.Home).ConfigureAwait(false);
     }
 
     #endregion
@@ -365,15 +385,22 @@ public sealed partial class PlayersLobbyViewModel : BaseViewModel, IDisposable
 
     private void OnConnectionRestored()
     {
-        ConnectionIsLost = false;
-
-        var newConnectedPlayer = new Player
+        try
         {
-            Name = CurrentPlayerName,
-            Status = DoNotDisturb ? PlayerStatus.DoNotDisturb : PlayerStatus.FreeToPlay
-        };
+            ConnectionIsLost = false;
 
-        _signalRClient.SendNewPlayerConnectAsync(newConnectedPlayer).SafeFireAndForget();
+            var newConnectedPlayer = new Player
+            {
+                Name = CurrentPlayerName,
+                Status = DoNotDisturb ? PlayerStatus.DoNotDisturb : PlayerStatus.FreeToPlay
+            };
+
+            _signalRClient.SendNewPlayerConnectAsync(newConnectedPlayer).SafeFireAndForget();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't send notification about new player due to an error: ", ex);
+        }
     }
 
     #endregion

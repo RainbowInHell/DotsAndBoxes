@@ -28,7 +28,7 @@ public class AiPlayer
         }
 
         lineToClick.Color = _aiColor;
-        return _gameController.MakeMove(lineToClick.StartPoint.X, lineToClick.StartPoint.Y, lineToClick.EndPoint.X, lineToClick.EndPoint.Y);
+        return _gameController.MakeMove(lineToClick.X1, lineToClick.Y1, lineToClick.Y2);
     }
 
     private DrawableLine FindRandomAvailableMove(IReadOnlyCollection<DrawableLine> lines)

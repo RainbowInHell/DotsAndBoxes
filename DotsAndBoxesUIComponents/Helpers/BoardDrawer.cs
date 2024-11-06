@@ -1,4 +1,5 @@
-﻿using DotsAndBoxesServerAPI;
+﻿using System.Drawing;
+using DotsAndBoxesServerAPI;
 
 namespace DotsAndBoxesUIComponents;
 
@@ -12,7 +13,7 @@ public static class BoardDrawer
 
     // These are read-only lists that hold all the points (dots) and lines on the game board.
     // These lists are used to render (draw) the game board on the screen.
-    public static (IReadOnlyCollection<DrawablePoint> pointList, IReadOnlyCollection<DrawableLine> lineList)
+    public static (IReadOnlyCollection<Point> pointList, IReadOnlyCollection<DrawableLine> lineList)
         DrawBoard(GridSize gridSize)
     {
         // Represents the number of squares per row and per column (a 4x4 grid, meaning there are 4 squares in each direction).
@@ -25,14 +26,11 @@ public static class BoardDrawer
         return (CreatePointList(n, n, distanceBetweenPoints), CreateLineList(n, n, distanceBetweenPoints));
     }
 
-    /// <summary>
-    /// Creates a list of points (vertices) that form the intersections on the game grid.
-    /// </summary>
-    private static List<DrawablePoint> CreatePointList(int numberOfRows,
+    private static List<Point> CreatePointList(int numberOfRows,
                                                                       int numberOfColumns,
                                                                       int distanceBetweenPoints)
     {
-        var pointList = new List<DrawablePoint>();
+        var pointList = new List<Point>();
 
         // Loop through each row and column to generate the points.
         // We use `<=` because there are `n + 1` points along each axis (1 more than the number of squares).
@@ -48,9 +46,6 @@ public static class BoardDrawer
         return pointList;
     }
 
-    /// <summary>
-    /// Creates a list of horizontal and vertical lines that form the borders of the squares on the game grid.
-    /// </summary>
     private static List<DrawableLine> CreateLineList(int numberOfRows,
                                                      int numberOfColumns,
                                                      int distanceBetweenPoints)
@@ -80,9 +75,6 @@ public static class BoardDrawer
         return lineList;
     }
 
-    /// <summary>
-    /// Creates a horizontal line based on its grid position.
-    /// </summary>
     private static DrawableLine CreateHorizontalLine(int positionX,
                                                      int positionY,
                                                      int distanceBetweenPoints)
@@ -96,14 +88,13 @@ public static class BoardDrawer
 
         return new DrawableLine
         {
-            StartPoint = new DrawablePoint { X = x1, Y = y1 },
-            EndPoint = new DrawablePoint { X = x2, Y = y2 }
+            X1 = x1,
+            Y1 = y1,
+            X2 = x2,
+            Y2 = y2
         };
     }
 
-    /// <summary>
-    /// Creates a vertical line based on its grid position.
-    /// </summary>
     private static DrawableLine CreateVerticalLine(int positionX,
                                                    int positionY,
                                                    int distanceBetweenPoints)
@@ -117,15 +108,14 @@ public static class BoardDrawer
 
         return new DrawableLine
         {
-            StartPoint = new DrawablePoint { X = x1, Y = y1 },
-            EndPoint = new DrawablePoint { X = x2, Y = y2 }
+            X1 = x1,
+            Y1 = y1,
+            X2 = x2,
+            Y2 = y2
         };
     }
 
-    /// <summary>
-    /// Creates a point based on its grid position, adjusting for its size on the screen.
-    /// </summary>
-    private static DrawablePoint CreatePoint(int positionX,
+    private static Point CreatePoint(int positionX,
                                              int positionY,
                                              int distanceBetweenPoints)
     {
@@ -133,7 +123,7 @@ public static class BoardDrawer
         // Adjust the coordinates so that the point appears centered around its grid location.
         var x = positionX * distanceBetweenPoints - DefaultEllipseSize / 2;
         var y = positionY * distanceBetweenPoints - DefaultEllipseSize / 2;
-        return new DrawablePoint { X = x, Y = y };
+        return new Point { X = x, Y = y };
     }
 
     private static int GridSizeTypeToInt(GridSize gridSize)

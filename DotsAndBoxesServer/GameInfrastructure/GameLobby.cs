@@ -21,14 +21,9 @@ public class GameLobby
         Id = Guid.NewGuid().ToString();
     }
 
-    public int MakeMove(int startPointX, int startPointY, int endPointX, int endPointY)
+    public (int gainPoints, bool isGameEnd) MakeMove(int x1, int y1, int y2)
     { 
-        return _gameController.MakeMove(startPointX, startPointY, endPointX, endPointY);
-    }
-
-    public bool IsGameEnded()
-    {
-        return _gameController.IsGameEnded();
+        return (_gameController.MakeMove(x1, y1, y2), _gameController.IsGameEnded());
     }
 
     public string GetOpponentConnectionId(string playerConnectionId)
@@ -36,5 +31,11 @@ public class GameLobby
         return _firstPlayerConnectionId == playerConnectionId
                    ? _secondPlayerConnectionId
                    : _firstPlayerConnectionId;
+    }
+
+    public bool IsPlayerInLobby(string playerConnectionId)
+    {
+        return _firstPlayerConnectionId == playerConnectionId
+               || _secondPlayerConnectionId == playerConnectionId;
     }
 }

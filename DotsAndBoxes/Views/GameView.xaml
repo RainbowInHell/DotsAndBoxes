@@ -65,7 +65,7 @@
         
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type DotsAndBoxesUIComponents:DrawableLine}">
-                                <Line X1="{Binding StartPoint.X}" Y1="{Binding StartPoint.Y}" X2="{Binding EndPoint.X}" Y2="{Binding EndPoint.Y}"
+                                <Line X1="{Binding X1}" Y1="{Binding Y1}" X2="{Binding X2}" Y2="{Binding Y2}"
                                       Stroke="{Binding Color}" StrokeThickness="8">
                                     <i:Interaction.Behaviors>
                                         <DotsAndBoxesUIComponents:LineHoverAndClickBehavior CanClick="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Page}}, Path=DataContext.CanMakeMove}"/>

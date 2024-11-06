@@ -1,119 +1,112 @@
 ﻿namespace DotsAndBoxesServerAPI;
 
-/// <summary>
-/// The GameController class is responsible for managing the game state of the "Dots and Boxes" game.
-/// It initializes the game grid, handles line clicks, checks for completed squares, and tracks game progress.
-/// </summary>
 public class GameController
 {
-    private readonly int _n; // Represents the number of squares per row and per column (a 4x4 grid, meaning there are 4 squares in each direction).
-    private const int DefaultWidthHeight = 400; // The total width and height of the game board in pixels.
-
-    // This variable keeps track of how many squares have been completed so far.
-    private int _completedBoxesTracker;
-
-    // The distance between each point on the grid, calculated based on the board size and the number of squares.
-    // For example, if the board is 400 pixels wide and there are 4 squares, the distance would be 100 pixels.
-    private readonly int _distanceBetweenPoints;
-
-    // Two-dimensional arrays that help track which lines have been clicked:
-    // - `linesX` tracks horizontal lines (lines that go left-to-right).
-    // - `linesY` tracks vertical lines (lines that go up-and-down).
-    // Each entry in these arrays is either `true` (line has been clicked) or `false` (line has not been clicked).
-    private readonly bool[,] _linesX; // Tracks the horizontal lines.
-    private readonly bool[,] _linesY; // Tracks the vertical lines.
+    /// <summary>
+    /// The total width and height of the game board in pixels.
+    /// </summary>
+    private const int DefaultWidthHeight = 400;
 
     /// <summary>
-    /// Constructor that sets up the game board. It initializes the points and lines, and prepares the arrays that track line clicks.
+    /// Represents the number of squares per row and per column (a 4x4 grid, meaning there are 4 squares in each direction).
     /// </summary>
+    private readonly int _n;
+
+    /// <summary>
+    /// The distance between each point on the grid, calculated based on the board size and the number of squares.
+    /// For example, if the board is 400 pixels wide and there are 4 squares, the distance would be 100 pixels.
+    /// </summary>
+    private readonly int _distanceBetweenPoints;
+
+    /// <summary>
+    /// Tracks horizontal lines (lines that go left-to-right).
+    /// </summary>
+    private readonly bool[,] _horizontalLines;
+
+    /// <summary>
+    /// Tracks vertical lines (lines that go up-and-down).
+    /// </summary>
+    private readonly bool[,] _verticalLines;
+
+    /// <summary>
+    /// This variable keeps track of how many squares have been completed so far.
+    /// </summary>
+    private int _completedBoxesTracker;
+
     public GameController(GridSize gridSize)
     {
         _n = GridSizeTypeToInt(gridSize);
-        // Calculate the distance between each point on the board.
-        // This is done by dividing the total width of the board by the number of squares.
-        // For example, if `n` is 4, and the width is 400 pixels, then each point will be 100 pixels apart.
         _distanceBetweenPoints = DefaultWidthHeight / _n;
 
-        // Initialize the boolean arrays that track clicked lines:
-        // `linesX` will have `n + 1` rows because there are `n + 1` horizontal lines (1 more than the number of squares).
-        // `linesY` will have `n + 1` columns because there are `n + 1` vertical lines (1 more than the number of squares).
-        _linesX = new bool[_n + 1, _n];
-        _linesY = new bool[_n, _n + 1];
+        // `n + 1` rows because there are `n + 1` horizontal lines (1 more than the number of squares).
+        _horizontalLines = new bool[_n + 1, _n];
+
+        // `n + 1` columns because there are `n + 1` vertical lines (1 more than the number of squares).
+        _verticalLines = new bool[_n, _n + 1];
     }
 
-    /// <summary>
-    /// Handles what happens when a line is clicked, checking if it results in a completed square.
-    /// This method updates the game state and is used by real players and by the AI once a move is confirmed.
-    /// </summary>
-    public int MakeMove(int startPointX, int startPointY, int endPointX, int endPointY)
+    public int MakeMove(int x1, int y1, int y2)
     {
-        // Update the arrays (`linesX` or `linesY`) to mark this line as clicked for real player moves or confirmed AI moves.
-        UpdateLineArrays(startPointX, startPointY, endPointX, endPointY);
-        var completedSquaresCounter = 0;
+        var newlyCompletedSquares = 0;
 
-        // Determine the grid coordinates of the line's start point.
-        var x = startPointX / _distanceBetweenPoints;
-        var y = startPointY / _distanceBetweenPoints;
+        // Calculate the grid cell coordinates based on the start point.
+        var gridColumnIndex = x1 / _distanceBetweenPoints;
+        var gridRowIndex = y1 / _distanceBetweenPoints;
 
-        // Check if the line is horizontal or vertical, and then determine which squares it could potentially complete:
-        // Horizontal lines can complete a square above or below them.
-        if (IsHorizontalLine(startPointY, endPointY))
+        // Determine if the selected line is horizontal based on Y-coordinates.
+        var isHorizontal = IsHorizontalLine(y1, y2);
+
+        // Mark the line as clicked in the appropriate array.
+        MarkLineAsClicked(gridColumnIndex, gridRowIndex, isHorizontal);
+
+        // Check adjacent squares to see if the newly clicked line completes any square.
+        if (isHorizontal)
         {
-            if (y > 0 && IsSquareComplete(x, y - 1)) completedSquaresCounter++; // Check the square above.
-            if (y < _n && IsSquareComplete(x, y)) completedSquaresCounter++; // Check the square below.
+            // For horizontal lines, check the square above and the square below.
+            if (gridRowIndex > 0 && IsSquareCompleted(gridColumnIndex, gridRowIndex - 1)) newlyCompletedSquares++; // Square above.
+            if (gridRowIndex < _n && IsSquareCompleted(gridColumnIndex, gridRowIndex)) newlyCompletedSquares++; // Square below.
         }
         else
         {
-            // Vertical lines can complete a square to the left or right of them.
-            if (x > 0 && IsSquareComplete(x - 1, y)) completedSquaresCounter++; // Check the square to the left.
-            if (x < _n && IsSquareComplete(x, y)) completedSquaresCounter++; // Check the square to the right.
+            // For vertical lines, check the square to the left and the square to the right.
+            if (gridColumnIndex > 0 && IsSquareCompleted(gridColumnIndex - 1, gridRowIndex)) newlyCompletedSquares++; // Square to the left.
+            if (gridColumnIndex < _n && IsSquareCompleted(gridColumnIndex, gridRowIndex)) newlyCompletedSquares++; // Square to the right.
         }
 
-        _completedBoxesTracker += completedSquaresCounter;
-        return completedSquaresCounter;
+        _completedBoxesTracker += newlyCompletedSquares;
+        return newlyCompletedSquares;
     }
 
-    /// <summary>
-    /// Determines if the game has ended by checking if all possible squares are completed.
-    /// </summary>
     public bool IsGameEnded() => _completedBoxesTracker == _n * _n;
 
-    /// <summary>
-    /// Marks a line as clicked in the appropriate boolean array.
-    /// </summary>
-    private void UpdateLineArrays(int startPointX, int startPointY, int endPointX, int endPointY)
+    private void MarkLineAsClicked(int gridColumnIndex, int gridRowIndex, bool isHorizontal)
     {
-        // Determine if the line is horizontal or vertical and update the correct array.
-        if (IsHorizontalLine(startPointY, endPointY))
+        // Mark the selected line as "clicked" in the corresponding line tracking array.
+        if (isHorizontal)
         {
-            var x = startPointX / _distanceBetweenPoints;
-            var y = startPointY / _distanceBetweenPoints;
-            _linesX[y, x] = true; // Mark the horizontal line at (x, y) as clicked.
+            // For horizontal lines, mark the line in the _horizontalLines array at (gridY, gridX).
+            _horizontalLines[gridRowIndex, gridColumnIndex] = true;
         }
         else
         {
-            var x = startPointX / _distanceBetweenPoints;
-            var y = startPointY / _distanceBetweenPoints;
-            _linesY[y, x] = true; // Mark the vertical line at (x, y) as clicked.
+            // For vertical lines, mark the line in the _verticalLines array at (gridY, gridX).
+            _verticalLines[gridRowIndex, gridColumnIndex] = true;
         }
     }
 
-    /// <summary>
-    /// Checks if a square at the specified grid position is complete (all four lines around it are clicked).
-    /// </summary>
-    private bool IsSquareComplete(int x, int y)
+    private bool IsSquareCompleted(int gridColumnIndex, int gridRowIndex)
     {
-        // Check if all four sides of the square at (x, y) are clicked.
-        return _linesX[y, x] && _linesX[y + 1, x] && _linesY[y, x] && _linesY[y, x + 1];
+        var topBoundaryClicked = _horizontalLines[gridRowIndex, gridColumnIndex];
+        var bottomBoundaryClicked = _horizontalLines[gridRowIndex + 1, gridColumnIndex];
+        var leftBoundaryClicked = _verticalLines[gridRowIndex, gridColumnIndex];
+        var rightBoundaryClicked = _verticalLines[gridRowIndex, gridColumnIndex + 1];
+
+        return topBoundaryClicked && bottomBoundaryClicked && leftBoundaryClicked && rightBoundaryClicked;
     }
 
-    /// <summary>
-    /// Determines if the given line is horizontal by comparing its start and end points.
-    /// </summary>
-    private static bool IsHorizontalLine(int startPointY, int endPointY)
+    private static bool IsHorizontalLine(int y1, int y2)
     {
-        // A line is considered horizontal if its start and end points share the same Y coordinate.
-        return startPointY == endPointY;
+        return y1 == y2;
     }
 
     private static int GridSizeTypeToInt(GridSize gridSize)

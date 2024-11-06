@@ -116,17 +116,15 @@ public sealed partial class HomeViewModel : BaseViewModel
 
         if (SelectedGameTypeItem.Icon == PackIconKind.Account)
         {
-            _navigationService.Navigate(Routes.Game, new DynamicDictionary(("FirstPlayerName", FirstPlayerName),
-                                                                           ("SecondPlayerName", "Компьютер"),
-                                                                           ("CanMakeMove", true),
-                                                                           ("GridSize", SelectedGridSize)));
+            _navigationService.Navigate(Routes.Game, new DynamicDictionary((nameof(FirstPlayerName), FirstPlayerName),
+                                                                           (nameof(SecondPlayerName), "Компьютер"),
+                                                                           (nameof(GridSize), SelectedGridSize)));
             return;
         }
 
         try
         {
             IsLoading = true;
-
             await Task.Delay(1500).ConfigureAwait(false);
 
             var connectedPlayers = await _gameAPI.GetConnectedPlayers().ConfigureAwait(false);
@@ -156,12 +154,22 @@ public sealed partial class HomeViewModel : BaseViewModel
         }
         catch (HttpRequestException ex)
         {
-            _logger.LogError("Can't go to players lobby due to an error: {ex}", ex);
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't navigate to players lobby due to an http request exception: ", ex);
 
             IsLoading = false;
             await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
                                                                         {
                                                                             _ = MessageBox.Show("Сервер недоступен, попробуйте позже.", MsgBoxButton.OK, MsgBoxImage.Error);
+                                                                        });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWithCallerInfo(LogLevel.Error, "Can't navigate to players lobby due to an exception: ", ex);
+
+            IsLoading = false;
+            await DispatcherHelper.InvokeMethodInCorrectThreadAsync(() =>
+                                                                        {
+                                                                            _ = MessageBox.Show("Неизвестная ошибка, попробуйте позже.", MsgBoxButton.OK, MsgBoxImage.Error);
                                                                         });
         }
     }
